@@ -58,6 +58,25 @@ namespace SPH
 	};
 
 	/**
+	 * Created by Haotian Shi from SJTU
+	 * @class PDBody
+	 * @brief Declaration of solid body which is used for Solid BCs and derived from RealBody.
+	 */
+	class PDBody : public RealBody
+	{
+	public:
+		template <typename... ConstructorArgs>
+		PDBody(ConstructorArgs &&...args)
+			: RealBody(std::forward<ConstructorArgs>(args)...)
+		{
+			sph_system_.solid_bodies_.push_back(this);
+			defineAdaptation<SPHAdaptation>(1.5075);
+		};
+		virtual ~PDBody() {};
+		virtual PDBody* ThisObjectPtr() override { return this; };
+	};
+
+	/**
 	 * @class SolidBodyPartForSimbody
 	 * @brief A SolidBodyPart for coupling with Simbody.
 	 * The mass, origin, and unit inertial matrix are computed.

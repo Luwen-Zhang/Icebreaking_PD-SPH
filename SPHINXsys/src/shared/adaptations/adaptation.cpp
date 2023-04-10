@@ -17,10 +17,20 @@ namespace SPH
 		  h_ref_(h_spacing_ratio_ * spacing_ref_), kernel_ptr_(makeUnique<KernelWendlandC2>(h_ref_)),
 		  sigma0_ref_(computeReferenceNumberDensity(Vecd())),
 		  spacing_min_(this->MostRefinedSpacing(spacing_ref_, local_refinement_level_)),
-		  h_ratio_max_(powerN(2.0, local_refinement_level_)){};
+		  h_ratio_max_(powerN(2.0, local_refinement_level_)){
+		//Added by Haotian Shi from SJTU
+		if (body_name_ == "PDBody") {
+			kernel_ptr_ = makeUnique<Winfunc>(h_ref_);
+		}
+		//==============================
+	};
 	//=================================================================================================//
 	SPHAdaptation::SPHAdaptation(SPHBody &sph_body, Real h_spacing_ratio, Real system_refinement_ratio)
-		: SPHAdaptation(sph_body.getSPHSystem().resolution_ref_, h_spacing_ratio, system_refinement_ratio){};
+		: SPHAdaptation(sph_body.getSPHSystem().resolution_ref_, h_spacing_ratio, system_refinement_ratio){
+		//Added by Haotian Shi from SJTU
+		body_name_ = sph_body.getName();
+		//==============================
+	};
 	//=================================================================================================//
 	Real SPHAdaptation::MostRefinedSpacing(Real coarse_particle_spacing, int refinement_level)
 	{

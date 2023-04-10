@@ -58,5 +58,32 @@ namespace SPH
 		virtual Real d2W_2D(const Real q) const override;
 		virtual Real d2W_3D(const Real q) const override;
 	};
+
+	/** 
+	 * Created by Haotian Shi from SJTU
+	 * @class Winfunc
+	 * @brief Winfunc for Peridynamics
+	 */
+	class Winfunc : public Kernel
+	{
+	public:
+		explicit Winfunc(Real h);
+
+		/**
+		 * Calculates the kernel value for
+		 * the given distance of two particles
+		 */
+		virtual Real W_1D(const Real q) const override;
+		virtual Real W_2D(const Real q) const override;
+		virtual Real W_3D(const Real q) const override;
+
+		virtual Real dW_1D(const Real q) const override;
+		virtual Real dW_2D(const Real q) const override;
+		virtual Real dW_3D(const Real q) const override;
+
+		virtual Real d2W_1D(const Real q) const override;
+		virtual Real d2W_2D(const Real q) const override;
+		virtual Real d2W_3D(const Real q) const override;
+	};
 }
 #endif //KERNEL_WENLAND_C2_H
