@@ -214,5 +214,32 @@ namespace SPH
 			F_[index_i] += dF_dt_[index_i] * dt * 0.5;
 		}
 		//=================================================================================================//
+		//=================================================================================================//
+		NosbPDShapeMatrix::
+			NosbPDShapeMatrix(BaseInnerRelation& inner_relation)
+			: LocalDynamics(inner_relation.getSPHBody()), NosbPDSolidDataInner(inner_relation),
+			Vol_(particles_->Vol_), shape_K_(particles_->shape_K_),
+			shape_K_1_(particles_->shape_K_1_) {}
+		//=================================================================================================//
+		void NosbPDShapeMatrix::interaction(size_t index_i, Real dt)
+		{
+			Matd local_configuration = Eps * Matd::Identity(); // a small number added to diagonal to avoid divide zero
+			const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
+			for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+			{
+				size_t index_j = inner_neighborhood.j_[n];
+
+				Vecd r_ij = -inner_neighborhood.r_ij_[n] * inner_neighborhood.e_ij_[n];
+				local_configuration += inner_neighborhood.W_ij_[n] * Vol_[index_j] * (r_ij * r_ij.transpose());
+			}
+			shape_K_[index_i] += local_configuration;
+		}
+		//=================================================================================================//
+		void NosbPDShapeMatrix::update(size_t index_i, Real dt)
+		{
+			shape_K_1_[index_i] = shape_K_[index_i].inverse();
+		}
+
+
 	}
 }

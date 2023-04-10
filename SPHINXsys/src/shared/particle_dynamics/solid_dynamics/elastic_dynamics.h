@@ -47,6 +47,8 @@ namespace SPH
 		//----------------------------------------------------------------------
 		typedef DataDelegateSimple<ElasticSolidParticles> ElasticSolidDataSimple;
 		typedef DataDelegateInner<ElasticSolidParticles> ElasticSolidDataInner;
+		//Added by Haotian Shi from SJTU
+		typedef DataDelegateInner<NosbPDParticles> NosbPDSolidDataInner;
 
 		/**
 		 * @class ElasticDynamicsInitialCondition
@@ -224,6 +226,25 @@ namespace SPH
 			void initialization(size_t index_i, Real dt = 0.0);
 			void interaction(size_t index_i, Real dt = 0.0);
 			void update(size_t index_i, Real dt = 0.0);
+		};
+
+		/**
+		 * Created by Haotian Shi from SJTU
+		 * @class NosbPDShapeMatrix
+		 * @brief obtain the shape matrix in non-ordinary state based peridynamics		 
+		 */
+		class NosbPDShapeMatrix : public LocalDynamics, public NosbPDSolidDataInner
+		{
+		public:
+			explicit NosbPDShapeMatrix(BaseInnerRelation& inner_relation);
+			virtual ~NosbPDShapeMatrix() {};
+			void interaction(size_t index_i, Real dt = 0.0);
+			void update(size_t index_i, Real dt = 0.0);
+
+		protected:
+			StdLargeVec<Real>& Vol_;
+			StdLargeVec<Matd>& shape_K_;
+			StdLargeVec<Matd>& shape_K_1_;
 		};
 	}
 }
