@@ -188,5 +188,38 @@ namespace SPH
 		/** Return this pointer. */
 		virtual ShellParticles *ThisObjectPtr() override { return this; };
 	};
+
+	/**
+	 * Created by Haotian Shi from SJTU
+	 * @class NosbPDParticles
+	 * @brief A group of particles with Non-Oridinary State Based Peridynamic body particle data.
+	 */
+	class NosbPDParticles : public ElasticSolidParticles
+	{
+	public:
+		NosbPDParticles(SPHBody& sph_body, ElasticSolid* elastic_solid);
+		virtual ~NosbPDParticles() {};
+
+		StdLargeVec<bool> particleLive_;	  /**<  particleLive = false, when all the bonds are broken */
+		StdLargeVec<Matd> shape_K_;			  /**<  shape tensor determined in the reference configuration */
+		StdLargeVec<Matd> shape_K_1_;		  /**<  inverse of shape_K */
+		//variables for Hughes-Winget algorithm
+		StdLargeVec<Matd> N_;				  /**<  deformation tensor determined in the current configuration */
+		StdLargeVec<Matd> N_deltaU_;		  /**<  velocity tensor determined in the current configuration */
+		StdLargeVec<Matd> N_half_;			  /**<  deformation tensor determined in the middle configuration */
+
+		StdLargeVec<Matd> F_half_;			  /**<  deformation gradient of middle configuration */
+		StdLargeVec<Matd> F_delta_;			  /**<  velocity gradient determined in the current configuration */
+		StdLargeVec<Matd> F_1_;				  /**<  inverse of F_ */
+		StdLargeVec<Matd> F_1_half_;		  /**<  inverse of F_half_ */
+
+		StdLargeVec<Matd> PK1_;		  /**<  the lagrange stress tensor namely the first Piola-Kirchhoff stress tensor */
+		StdLargeVec<Matd> T0_;		  /**<  force state on particle i */
+
+		/** Initialize variable for Nosb-PD particles. */
+		virtual void initializeOtherVariables() override;
+		/** Return this pointer. */
+		virtual NosbPDParticles* ThisObjectPtr() override { return this; };
+	};
 }
 #endif // SOLID_PARTICLES_H
