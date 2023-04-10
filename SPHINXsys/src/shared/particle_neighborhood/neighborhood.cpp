@@ -25,6 +25,9 @@ namespace SPH
 	void NeighborBuilder::createNeighbor(Neighborhood &neighborhood, const Real &distance,
 										 const Vecd &displacement, size_t index_j, const Real &Vol_j)
 	{
+		//Added by Haotian Shi from SJTU
+		neighborhood.bondLive_.push_back(true);
+		//==============================
 		neighborhood.j_.push_back(index_j);
 		neighborhood.W_ij_.push_back(kernel_->W(distance, displacement));
 		neighborhood.dW_ijV_j_.push_back(kernel_->dW(distance, displacement) * Vol_j);
@@ -37,6 +40,9 @@ namespace SPH
 											 const Vecd &displacement, size_t index_j, const Real &Vol_j)
 	{
 		size_t current_size = neighborhood.current_size_;
+		//Added by Haotian Shi from SJTU
+		neighborhood.bondLive_[current_size] = true;
+		//==============================
 		neighborhood.j_[current_size] = index_j;
 		neighborhood.W_ij_[current_size] = kernel_->W(distance, displacement);
 		neighborhood.dW_ijV_j_[current_size] = kernel_->dW(distance, displacement) * Vol_j;
