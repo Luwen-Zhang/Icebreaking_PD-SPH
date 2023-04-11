@@ -130,6 +130,12 @@ int main(int ac, char *av[])
 	// time step size calculation
 	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> computing_time_step_size(beam_body);
 	
+	//stress relaxation for the beam by Hughes-Winget algorithm
+	SimpleDynamics<solid_dynamics::NosbPDFirstStep> NosbPD_firstStep(beam_body);
+	InteractionWithUpdate<solid_dynamics::NosbPDSecondStep> NosbPD_secondStep(beam_body_inner);
+	InteractionDynamics<solid_dynamics::NosbPDThirdStep> NosbPD_thirdStep(beam_body_inner);
+	SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(beam_body);
+
 	// clamping a solid body part. This is softer than a direct constraint
 	BodyRegionByParticle beam_base(beam_body, makeShared<MultiPolygonShape>(createBeamConstrainShape()));
 	SimpleDynamics<solid_dynamics::FixBodyPartConstraint> constraint_beam_base(beam_base);
