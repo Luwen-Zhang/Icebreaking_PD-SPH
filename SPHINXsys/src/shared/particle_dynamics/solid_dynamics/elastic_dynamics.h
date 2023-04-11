@@ -282,13 +282,14 @@ namespace SPH
 			void update(size_t index_i, Real dt = 0.0);
 
 		protected:
+			ElasticSolid& elastic_solid_;
 			StdLargeVec<int> & particleLive_;
 			StdLargeVec<Real>& Vol_;
 			StdLargeVec<Vecd>& pos_, & vel_;
 			StdLargeVec<Matd>& F_, & shape_K_1_;
 			StdLargeVec<Matd>& N_, & N_deltaU_, & N_half_;
 			StdLargeVec<Matd>& F_half_, & F_delta_, & F_1_, & F_1_half_;
-			StdLargeVec<Matd>& PK1_, & T0_;
+			StdLargeVec<Matd>& PK1_, & T0_, & stress_;
 		};
 	}
 }

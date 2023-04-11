@@ -284,4 +284,23 @@ namespace SPH
 		}
 	}
 	//=================================================================================================//
+	Matd HugherWingetSolid::StressHW(Matd& G, Matd& stress_old, size_t particle_index_i)
+	{
+		//Symmetric part of G: rate of deformation tensor / rate of strain tensor
+		Matd Gsymm = (G + G.transpose()) * 0.5;
+		//Antisymmetric(skew) part of G: rate of rotation tensor / spin tensor / vorticity tensor
+		Matd Gskew = (G - G.transpose()) * 0.5;
+
+		Matd delta_sigma = 0.5 * lambda0_ * Gsymm.trace() * Matd::Identity()
+			+ G0_ * Gsymm;//0.5 * engineering shear strain!
+
+		delta_sigma.diagonal() = delta_sigma.diagonal() * 2.0;//shear strain tensor
+
+		Matd R = Matd::Identity() - Gskew * 0.5;
+		Matd Q = Matd::Identity() + R.inverse() * Gskew;
+
+		Matd trial_sigma = Q * stress_old * Q.transpose();
+
+		return delta_sigma + trial_sigma;
+	}
 }

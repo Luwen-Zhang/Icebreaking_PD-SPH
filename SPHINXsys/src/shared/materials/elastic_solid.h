@@ -74,6 +74,8 @@ namespace SPH
 		virtual Matd StressPK2(Matd &deformation, size_t particle_index_i) = 0;
 		/** Cauchy stress through Eulerian Almansi strain tensor. */
 		virtual Matd StressCauchy(Matd &almansi_strain, Matd &F, size_t particle_index_i) = 0;
+		/** Cauchy stress through Hughes-Winget algorithm. Added by Haotian Shi from SJTU*/
+		virtual Matd StressHW(Matd& vel_grad, Matd& stress_old, size_t particle_index_i) = 0;
 		/** Numerical damping stress using right Cauchy tensor. */
 		virtual Matd NumericalDampingRightCauchy(Matd &deformation, Matd &deformation_rate, Real smoothing_length, size_t particle_index_i);
 		/** Numerical damping stress using left Cauchy tensor. */
@@ -320,6 +322,27 @@ namespace SPH
 		virtual void readFromXmlForLocalParameters(const std::string &filefullpath) override;
 		/** Define the calculation of the stress matrix for postprocessing */
 		virtual std::string getRelevantStressMeasureName() override { return "Cauchy"; };
+	};
+
+	/**
+	* @Created by Haotian Shi from SJTU
+	* @class HughesWingetSolid
+	* @brief Incremental constitutive relation by Hughes-Winget algorithm
+	* keep stable for finite deformation with large rotation
+	* Hughes, T. J., & Winget, J. (1980). IJNME, 15(12), 1862-1867.
+	*/
+	class HugherWingetSolid : public LinearElasticSolid
+	{
+	public:
+		explicit HugherWingetSolid(Real rho0, Real youngs_modulus, Real poisson_ratio)
+			: LinearElasticSolid(rho0, youngs_modulus, poisson_ratio)
+		{
+			material_type_name_ = "HugherWingetSolid";
+		};
+		virtual ~HugherWingetSolid() {};
+
+		/** Cauchy stress updated by velocity gradient */
+		virtual Matd StressHW(Matd& vel_grad, Matd& stress_old, size_t particle_index_i) override;
 	};
 }
 #endif // ELASTIC_SOLID_H

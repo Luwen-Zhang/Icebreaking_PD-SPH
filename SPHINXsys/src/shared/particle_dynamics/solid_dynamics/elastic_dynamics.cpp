@@ -263,11 +263,11 @@ namespace SPH
 		NosbPDSecondStep::
 			NosbPDSecondStep(BaseInnerRelation& inner_relation)
 			: LocalDynamics(inner_relation.getSPHBody()), NosbPDSolidDataInner(inner_relation),
-			particleLive_(particles_->particleLive_), Vol_(particles_->Vol_),
+			elastic_solid_(particles_->elastic_solid_), particleLive_(particles_->particleLive_), Vol_(particles_->Vol_),
 			pos_(particles_->pos_), vel_(particles_->vel_), F_(particles_->F_), shape_K_1_(particles_->shape_K_1_),
 			N_(particles_->N_), N_deltaU_(particles_->N_deltaU_), N_half_(particles_->N_half_),
 			F_half_(particles_->F_half_), F_delta_(particles_->F_delta_), F_1_(particles_->F_1_), F_1_half_(particles_->F_1_half_),
-			PK1_(particles_->PK1_), T0_(particles_->T0_) {}
+			PK1_(particles_->PK1_), T0_(particles_->T0_), stress_(particles_->stress_) {}
 		//=================================================================================================//
 		void NosbPDSecondStep::interaction(size_t index_i, Real dt)
 		{
@@ -331,8 +331,15 @@ namespace SPH
 				//G: Eulerian Velocity gradient tensor
 				Matd G = F_delta_[index_i] * F_1_half_[index_i];
 				//Update Cauchy Stress by Hughes-Winget algorithm
-
-
+				stress_[index_i] = elastic_solid_.StressHW(G, stress_[index_i], index_i);
+				//PK1: The first Piola Kirchhoff stress tensor / Lagrange stress tensor
+				Matd PK1 = detF * F_1_[index_i] * stress_[index_i];
+				PK1_[index_i] = PK1.transpose();
+				//T0_: Force state 
+				T0_[index_i] = PK1_[index_i] * shape_K_1_[index_i];
+			}
+			else {
+				stress_[index_i] = Matd::Zero();
 			}
 		}
 

@@ -213,6 +213,7 @@ namespace SPH
 		StdLargeVec<Matd> F_1_;				  /**<  inverse of F_ */
 		StdLargeVec<Matd> F_1_half_;		  /**<  inverse of F_half_ */
 
+		StdLargeVec<Matd> stress_;	  /**<  Cauchy Stress tensor */
 		StdLargeVec<Matd> PK1_;		  /**<  the lagrange stress tensor namely the first Piola-Kirchhoff stress tensor */
 		StdLargeVec<Matd> T0_;		  /**<  force state on particle i */
 

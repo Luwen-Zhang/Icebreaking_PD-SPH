@@ -350,6 +350,7 @@ namespace SPH
 		registerVariable(F_1_, "F_1", [&](size_t i) -> Matd { return Matd::Identity(); });
 		registerVariable(F_1_half_, "F_1_half", [&](size_t i) -> Matd { return Matd::Identity(); });
 
+		registerVariable(stress_, "CauchyStress");
 		registerVariable(PK1_, "PK1");
 		registerVariable(T0_, "T0");
 				
