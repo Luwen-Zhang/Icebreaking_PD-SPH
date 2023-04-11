@@ -48,6 +48,7 @@ namespace SPH
 		typedef DataDelegateSimple<ElasticSolidParticles> ElasticSolidDataSimple;
 		typedef DataDelegateInner<ElasticSolidParticles> ElasticSolidDataInner;
 		//Added by Haotian Shi from SJTU
+		typedef DataDelegateSimple<NosbPDParticles> NosbPDSolidDataSimple;
 		typedef DataDelegateInner<NosbPDParticles> NosbPDSolidDataInner;
 
 		/**
@@ -243,8 +244,51 @@ namespace SPH
 
 		protected:
 			StdLargeVec<Real>& Vol_;
-			StdLargeVec<Matd>& shape_K_;
-			StdLargeVec<Matd>& shape_K_1_;
+			StdLargeVec<Matd>& shape_K_, & shape_K_1_;
+		};
+
+		/**
+		 * Created by Haotian Shi from SJTU
+		 * @class NosbPDFirstStep
+		 * @brief time marching into n+1/2 step
+		 */
+		class NosbPDFirstStep : public LocalDynamics, public NosbPDSolidDataSimple
+		{
+		public:
+			explicit NosbPDFirstStep(SPHBody& sph_body);
+			virtual ~NosbPDFirstStep() {};
+			
+			void update(size_t index_i, Real dt = 0.0);
+
+		protected:
+			ElasticSolid& elastic_solid_;
+			Real rho0_;
+			StdLargeVec<Real>& rho_;
+			StdLargeVec<Vecd>& pos_, & vel_, & acc_, & acc_prior_;
+			StdLargeVec<Matd>& F_;
+		};
+
+		/**
+		 * Created by Haotian Shi from SJTU
+		 * @class NosbPDSecondStep
+		 * @brief calculate F_, F_half_, F_1_, F_1_half_, F_delta, and then calculate the Cauchy stress
+		 */
+		class NosbPDSecondStep : public LocalDynamics, public NosbPDSolidDataInner
+		{
+		public:
+			explicit NosbPDSecondStep(BaseInnerRelation& inner_relation);
+			virtual ~NosbPDSecondStep() {};
+			void interaction(size_t index_i, Real dt = 0.0);
+			void update(size_t index_i, Real dt = 0.0);
+
+		protected:
+			StdLargeVec<int> & particleLive_;
+			StdLargeVec<Real>& Vol_;
+			StdLargeVec<Vecd>& pos_, & vel_;
+			StdLargeVec<Matd>& F_, & shape_K_1_;
+			StdLargeVec<Matd>& N_, & N_deltaU_, & N_half_;
+			StdLargeVec<Matd>& F_half_, & F_delta_, & F_1_, & F_1_half_;
+			StdLargeVec<Matd>& PK1_, & T0_;
 		};
 	}
 }
