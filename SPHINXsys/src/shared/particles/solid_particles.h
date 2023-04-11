@@ -200,7 +200,7 @@ namespace SPH
 		NosbPDParticles(SPHBody& sph_body, ElasticSolid* elastic_solid);
 		virtual ~NosbPDParticles() {};
 
-		StdLargeVec<bool> particleLive_;	  /**<  particleLive = false, when all the bonds are broken */
+		StdLargeVec<int> particleLive_;	  /**<  particleLive = false, when all the bonds are broken */
 		StdLargeVec<Matd> shape_K_;			  /**<  shape tensor determined in the reference configuration */
 		StdLargeVec<Matd> shape_K_1_;		  /**<  inverse of shape_K */
 		//variables for Hughes-Winget algorithm

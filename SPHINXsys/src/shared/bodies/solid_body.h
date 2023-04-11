@@ -62,14 +62,13 @@ namespace SPH
 	 * @class PDBody
 	 * @brief Declaration of solid body which is used for Solid BCs and derived from RealBody.
 	 */
-	class PDBody : public RealBody
+	class PDBody : public SolidBody
 	{
 	public:
 		template <typename... ConstructorArgs>
 		PDBody(ConstructorArgs &&...args)
-			: RealBody(std::forward<ConstructorArgs>(args)...)
+			: SolidBody(std::forward<ConstructorArgs>(args)...)
 		{
-			sph_system_.solid_bodies_.push_back(this);
 			defineAdaptation<SPHAdaptation>(1.5075);
 		};
 		virtual ~PDBody() {};

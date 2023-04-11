@@ -337,7 +337,7 @@ namespace SPH
 		/**
 		 *	register particle data
 		 */
-		registerVariable(particleLive_, "ParticleLive", [&](size_t i) -> bool { return true; });
+		registerVariable(particleLive_, "ParticleLive", [&](size_t i) -> int { return 1; });
 		registerVariable(shape_K_, "shapeK");
 		registerVariable(shape_K_1_, "shapeK_1");
 
