@@ -342,7 +342,50 @@ namespace SPH
 				stress_[index_i] = Matd::Zero();
 			}
 		}
+		//=================================================================================================//
+		NosbPDThirdStep::
+			NosbPDThirdStep(BaseInnerRelation& inner_relation)
+			: LocalDynamics(inner_relation.getSPHBody()), NosbPDSolidDataInner(inner_relation),
+			elastic_solid_(particles_->elastic_solid_), particleLive_(particles_->particleLive_), 
+			Vol_(particles_->Vol_),	acc_(particles_->acc_), T0_(particles_->T0_) 
+		{
+			rho0_ = particles_->elastic_solid_.ReferenceDensity();
+		}
+		//=================================================================================================//
+		void NosbPDThirdStep::interaction(size_t index_i, Real dt)
+		{
+			if (particleLive_[index_i] == 1) {
 
+				Vecd acceleration = Vecd::Zero();
 
+				const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
+				for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+				{
+					size_t index_j = inner_neighborhood.j_[n];
+
+					Vecd r_ij = -inner_neighborhood.r_ij_[n] * inner_neighborhood.e_ij_[n];
+					if (inner_neighborhood.bondLive_[n]) {
+						//Force state T0 projection onto the bond
+						//T_ij: force from j to i
+						Vecd T_ij = inner_neighborhood.W_ij_[n] * T0_[index_i] * r_ij;
+						Vecd T_ji = inner_neighborhood.W_ij_[n] * T0_[index_j] * -r_ij;
+						acceleration += (T_ij - T_ji) * Vol_[index_j];
+					}
+				}
+				acc_[index_i] += acceleration / rho0_;
+			}
+		}
+		//=================================================================================================//
+		NosbPDFourthStep::NosbPDFourthStep(SPHBody& sph_body)
+			: LocalDynamics(sph_body),
+			NosbPDSolidDataSimple(sph_body),
+			pos_(particles_->pos_), vel_(particles_->vel_),
+			acc_(particles_->acc_)	{}
+		//=================================================================================================//
+		void NosbPDFourthStep::update(size_t index_i, Real dt)
+		{
+			vel_[index_i] += acc_[index_i] * dt;
+			pos_[index_i] += vel_[index_i] * dt * 0.5;
+		}
 	}
 }

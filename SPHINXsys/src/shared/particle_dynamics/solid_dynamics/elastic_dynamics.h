@@ -291,6 +291,42 @@ namespace SPH
 			StdLargeVec<Matd>& F_half_, & F_delta_, & F_1_, & F_1_half_;
 			StdLargeVec<Matd>& PK1_, & T0_, & stress_;
 		};
+		/**
+		* @Created by Haotian Shi from SJTU
+		* @class NosbPDThirdStep
+		* @brief calculate acc_ based on ordinary scheme, and then time march
+		*/
+		class NosbPDThirdStep : public LocalDynamics, public NosbPDSolidDataInner
+		{
+		public:
+			explicit NosbPDThirdStep(BaseInnerRelation& inner_relation);
+			virtual ~NosbPDThirdStep() {};
+			void interaction(size_t index_i, Real dt = 0.0);			
+
+		protected:	
+			ElasticSolid& elastic_solid_;
+			Real rho0_;
+			StdLargeVec<int>& particleLive_;
+			StdLargeVec<Real>& Vol_;
+			StdLargeVec<Vecd>& acc_;
+			StdLargeVec<Matd>& T0_;
+		};
+		/**
+		 * Created by Haotian Shi from SJTU
+		 * @class NosbPDFourthStep
+		 * @brief time marching into n+1 step
+		 */
+		class NosbPDFourthStep : public LocalDynamics, public NosbPDSolidDataSimple
+		{
+		public:
+			explicit NosbPDFourthStep(SPHBody& sph_body);
+			virtual ~NosbPDFourthStep() {};
+
+			void update(size_t index_i, Real dt = 0.0);
+
+		protected:			
+			StdLargeVec<Vecd>& pos_, & vel_, & acc_;
+		};
 	}
 }
 #endif // ELASTIC_DYNAMICS_H
