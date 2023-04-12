@@ -11,12 +11,12 @@ using namespace SPH;
 //------------------------------------------------------------------------------
 // global parameters for the case
 //------------------------------------------------------------------------------
-Real PL = 0.2;	// beam length
+Real PL = 0.1;	// beam length
 Real PH = 0.02; // for thick plate; =0.01 for thin plate
-Real SL = 0.06; // depth of the insert
+Real SL = 0.02; // depth of the insert
 // reference particle spacing
-Real resolution_ref = PH / 20.0;
-Real BW = resolution_ref * 4; // boundary width, at least three particles
+Real resolution_ref = PH / 40.0;
+Real BW = resolution_ref * 0; // boundary width, at least three particles
 /** Domain bounds of the system. */
 BoundingBox system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
 								 Vec2d(PL + 3.0 * BW, PL / 2.0));
@@ -24,8 +24,8 @@ BoundingBox system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
 Real rho0_s = 1.0e3;		 // reference density
-Real Youngs_modulus = 2.0e11; // reference Youngs modulus
-Real poisson = 0.3975;		 // Poisson ratio
+Real Youngs_modulus = 2.0e6; // reference Youngs modulus
+Real poisson = 0.333;		 // Poisson ratio
 //----------------------------------------------------------------------
 //	Parameters for initial condition on velocity
 //----------------------------------------------------------------------
@@ -35,7 +35,7 @@ Real N = cos(kl) + cosh(kl);
 Real Q = 2.0 * (cos(kl) * sinh(kl) - sin(kl) * cosh(kl));
 Real vf = 0.05;
 Real R = PL / (0.5 * Pi);
-Real gravity_g = 0.0;
+Real gravity_g = 9.8;
 //----------------------------------------------------------------------
 //	Geometric shapes used in the system.
 //----------------------------------------------------------------------
@@ -133,6 +133,7 @@ int main(int ac, char *av[])
 	// time step size calculation
 	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> computing_time_step_size(beam_body);
 	
+	SimpleDynamics<TimeStepInitialization> initialize_a_solid_step(beam_body, makeShared<Gravity>(Vecd(0.0, -gravity_g)));
 	//stress relaxation for the beam by Hughes-Winget algorithm
 	SimpleDynamics<solid_dynamics::NosbPDFirstStep> NosbPD_firstStep(beam_body);
 	InteractionWithUpdate<solid_dynamics::NosbPDSecondStep> NosbPD_secondStep(beam_body_inner);
@@ -177,19 +178,19 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	system.initializeSystemCellLinkedLists();
 	system.initializeSystemConfigurations();
-	beam_initial_velocity.exec();
+	//beam_initial_velocity.exec();
 	beam_shapeMatrix.exec();
 	
 	//----------------------------------------------------------------------
 	//	Setup computing time-step controls.
 	//----------------------------------------------------------------------
 	int ite = 0;
-	Real T0 = 0.0001;
+	Real T0 = 0.2;
 	Real end_time = T0;
 	// time step size for output file
 	Real output_interval = 0.01 * T0;
 	Real Dt = 0.1 * output_interval; /**< Time period for data observing */
-	Real dt = 0.0;					 // default acoustic time step sizes
+	Real dt = 1.0e-6;					 // default acoustic time step sizes
 
 	// statistics for computing time
 	tick_count t1 = tick_count::now();
@@ -211,6 +212,8 @@ int main(int ac, char *av[])
 			Real relaxation_time = 0.0;
 			while (relaxation_time < Dt)
 			{
+				initialize_a_solid_step.exec(dt);
+
 				NosbPD_firstStep.exec(dt);
 				NosbPD_secondStep.exec(dt);
 				NosbPD_thirdStep.exec(dt);
@@ -219,7 +222,7 @@ int main(int ac, char *av[])
 				constraint_beam_base.exec();				
 
 				ite++;
-				dt = 0.5 * computing_time_step_size.exec();
+				//dt = 0.1 * computing_time_step_size.exec();
 				relaxation_time += dt;
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;

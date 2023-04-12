@@ -87,7 +87,13 @@ namespace SPH
 				: BaseMotionConstraint<DynamicsIdentifier>(identifier){};
 			virtual ~FixConstraint(){};
 
-			void update(size_t index_i, Real dt = 0.0) { this->vel_[index_i] = Vecd::Zero(); };
+			void update(size_t index_i, Real dt = 0.0) 
+			{ 
+				//Modified by Haotian Shi from SJTU
+				this->pos_[index_i] = this->pos0_[index_i];
+				this->vel_[index_i] = Vecd::Zero(); 				
+				this->acc_[index_i] = Vecd::Zero();
+			};
 		};
 		using FixBodyConstraint = FixConstraint<SPHBody>;
 		using FixBodyPartConstraint = FixConstraint<BodyPartByParticle>;

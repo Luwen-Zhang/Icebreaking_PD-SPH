@@ -63,14 +63,16 @@ namespace SPH
 		: Kernel(h, "WinfuncPD")
 	{
 		factor_W_1D_ = inv_h_ * 3.0 / 4.0;
-		factor_W_2D_ = inv_h_ * inv_h_ * 7.0 / (4.0 * Pi);
-		factor_W_3D_ = inv_h_ * inv_h_ * inv_h_ * 21.0 / (16.0 * Pi);
+		//factor_W_2D_ = inv_h_ * inv_h_ * 7.0 / (4.0 * Pi);
+		//factor_W_3D_ = inv_h_ * inv_h_ * inv_h_ * 21.0 / (16.0 * Pi);
+		factor_W_2D_ = inv_h_ * inv_h_ * 15.0 / (7.0 * Pi);
+		factor_W_3D_ = inv_h_ * inv_h_ * inv_h_ * 3.0 / (2.0 * Pi);
 		setDerivativeParameters();
 	}
 	//=================================================================================================//
 	Real Winfunc::W_1D(const Real q) const
 	{
-		return powerN(1.0 - 0.5 * q, 4) * (1.0 + 2.0 * q);
+		return q < 1 ? (2.0 / 3.0 - powerN(q, 2) + 0.5 * powerN(q, 3)) : powerN(2.0 - q, 3) / 6.0;
 	}
 	//=================================================================================================//
 	Real Winfunc::W_2D(const Real q) const
@@ -85,7 +87,7 @@ namespace SPH
 	//=================================================================================================//
 	Real Winfunc::dW_1D(const Real q) const
 	{
-		return 0.625 * powerN(q - 2.0, 3) * q;
+		return q < 1 ? (-2.0 * q + 1.5 * powerN(q, 2)) : -1.0 * powerN(2.0 - q, 2) / 2.0;
 	}
 	//=================================================================================================//
 	Real Winfunc::dW_2D(const Real q) const
@@ -100,7 +102,7 @@ namespace SPH
 	//=================================================================================================//
 	Real Winfunc::d2W_1D(const Real q) const
 	{
-		return 1.25 * powerN(q - 2.0, 2) * (2.0 * q - 1.0);
+		return q < 1 ? (-2.0 + 3 * q) : 2.0 - q;
 	}
 	//=================================================================================================//
 	Real Winfunc::d2W_2D(const Real q) const
