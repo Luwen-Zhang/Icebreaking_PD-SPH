@@ -353,6 +353,11 @@ namespace SPH
 		registerVariable(stress_, "CauchyStress");
 		registerVariable(PK1_, "PK1");
 		registerVariable(T0_, "T0");
+
+		/**
+		 * add basic output particle data
+		 */
+		addVariableToWrite<Matd>("shapeK");
 				
 	}
 }

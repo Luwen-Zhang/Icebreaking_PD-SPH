@@ -224,7 +224,7 @@ namespace SPH
 		//=================================================================================================//
 		void NosbPDShapeMatrix::interaction(size_t index_i, Real dt)
 		{
-			Matd local_configuration = Eps * Matd::Identity(); // a small number added to diagonal to avoid divide zero
+			Matd local_configuration = Matd::Zero();
 			const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
 			for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
 			{

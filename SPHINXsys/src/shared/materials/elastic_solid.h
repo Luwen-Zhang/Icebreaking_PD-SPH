@@ -107,6 +107,7 @@ namespace SPH
 
 		virtual Matd StressPK2(Matd &deformation, size_t particle_index_i) override;
 		virtual Matd StressCauchy(Matd &almansi_strain, Matd &F, size_t particle_index_i) override;
+		virtual Matd StressHW(Matd& vel_grad, Matd& stress_old, size_t particle_index_i) override;
 		/** Volumetric Kirchhoff stress from determinate */
 		virtual Real VolumetricKirchhoff(Real J) override;
 		/** Define the calculation of the stress matrix for postprocessing */
@@ -331,15 +332,15 @@ namespace SPH
 	* keep stable for finite deformation with large rotation
 	* Hughes, T. J., & Winget, J. (1980). IJNME, 15(12), 1862-1867.
 	*/
-	class HugherWingetSolid : public LinearElasticSolid
+	class HughesWingetSolid : public LinearElasticSolid
 	{
 	public:
-		explicit HugherWingetSolid(Real rho0, Real youngs_modulus, Real poisson_ratio)
+		explicit HughesWingetSolid(Real rho0, Real youngs_modulus, Real poisson_ratio)
 			: LinearElasticSolid(rho0, youngs_modulus, poisson_ratio)
 		{
-			material_type_name_ = "HugherWingetSolid";
+			material_type_name_ = "HughesWingetSolid";
 		};
-		virtual ~HugherWingetSolid() {};
+		virtual ~HughesWingetSolid() {};
 
 		/** Cauchy stress updated by velocity gradient */
 		virtual Matd StressHW(Matd& vel_grad, Matd& stress_old, size_t particle_index_i) override;

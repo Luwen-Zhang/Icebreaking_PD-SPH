@@ -15,7 +15,7 @@ Real PL = 0.2;	// beam length
 Real PH = 0.02; // for thick plate; =0.01 for thin plate
 Real SL = 0.06; // depth of the insert
 // reference particle spacing
-Real resolution_ref = PH / 10.0;
+Real resolution_ref = PH / 20.0;
 Real BW = resolution_ref * 4; // boundary width, at least three particles
 /** Domain bounds of the system. */
 BoundingBox system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
@@ -24,7 +24,7 @@ BoundingBox system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
 Real rho0_s = 1.0e3;		 // reference density
-Real Youngs_modulus = 2.0e6; // reference Youngs modulus
+Real Youngs_modulus = 2.0e11; // reference Youngs modulus
 Real poisson = 0.3975;		 // Poisson ratio
 //----------------------------------------------------------------------
 //	Parameters for initial condition on velocity
@@ -35,6 +35,7 @@ Real N = cos(kl) + cosh(kl);
 Real Q = 2.0 * (cos(kl) * sinh(kl) - sin(kl) * cosh(kl));
 Real vf = 0.05;
 Real R = PL / (0.5 * Pi);
+Real gravity_g = 0.0;
 //----------------------------------------------------------------------
 //	Geometric shapes used in the system.
 //----------------------------------------------------------------------
@@ -87,7 +88,7 @@ MultiPolygon createBeamConstrainShape()
 {
 	MultiPolygon multi_polygon;
 	multi_polygon.addAPolygon(beam_base_shape, ShapeBooleanOps::add);
-	multi_polygon.addAPolygon(beam_shape, ShapeBooleanOps::sub);
+	//multi_polygon.addAPolygon(beam_shape, ShapeBooleanOps::sub);
 	return multi_polygon;
 };
 //------------------------------------------------------------------------------
@@ -106,8 +107,10 @@ int main(int ac, char *av[])
 	//	Creating body, materials and particles.
 	//----------------------------------------------------------------------
 	PDBody beam_body(system, makeShared<Beam>("PDBody"));
-	beam_body.defineParticlesAndMaterial<NosbPDParticles, SaintVenantKirchhoffSolid>(rho0_s, Youngs_modulus, poisson);
+	beam_body.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	beam_body.generateParticles<ParticleGeneratorLattice>();
+
+	size_t particle_num_s = beam_body.getBaseParticles().total_real_particles_;
 
 	ObserverBody beam_observer(system, "BeamObserver");
 	beam_observer.defineAdaptationRatios(1.5075, 2.0);
@@ -146,6 +149,29 @@ int main(int ac, char *av[])
 	BodyStatesRecordingToVtp write_beam_states(io_environment, system.real_bodies_);
 	RegressionTestEnsembleAveraged<ObservedQuantityRecording<Vecd>>
 		write_beam_tip_displacement("Position", io_environment, beam_observer_contact);
+	//Log file
+	std::string Logpath = io_environment.output_folder_ + "/SimLog.txt";
+	if (fs::exists(Logpath))
+	{
+		fs::remove(Logpath);
+	}
+	std::ofstream log_file(Logpath.c_str(), ios::trunc);
+	std::cout << "# PARAM SETING #" << "\n" << "\n"
+		<< "	particle_spacing_ref = " << resolution_ref << "\n"
+		<< "	particle_num_s = " << particle_num_s << "\n" << "\n"
+		<< "	rho0_s = " << rho0_s << "\n"
+		<< "	Youngs_modulus = " << Youngs_modulus << "\n"
+		<< "	poisson = " << poisson << "\n" << "\n"
+		<< "	gravity_g = " << gravity_g << "\n" << "\n"
+		<< "# COMPUTATION START # " << "\n" << "\n";
+	log_file << "#PARAM SETING#" << "\n" << "\n"
+		<< "	particle_spacing_ref = " << resolution_ref << "\n"
+		<< "	particle_num_s = " << particle_num_s << "\n" << "\n"
+		<< "	rho0_s = " << rho0_s << "\n"
+		<< "	Youngs_modulus = " << Youngs_modulus << "\n"
+		<< "	poisson = " << poisson << "\n" << "\n"
+		<< "	gravity_g = " << gravity_g << "\n" << "\n"
+		<< "#COMPUTATION START HERE# " << "\n" << "\n";
 	//----------------------------------------------------------------------
 	//	Setup computing and initial conditions.
 	//----------------------------------------------------------------------
@@ -154,6 +180,84 @@ int main(int ac, char *av[])
 	beam_initial_velocity.exec();
 	beam_shapeMatrix.exec();
 	
+	//----------------------------------------------------------------------
+	//	Setup computing time-step controls.
+	//----------------------------------------------------------------------
+	int ite = 0;
+	Real T0 = 0.0001;
+	Real end_time = T0;
+	// time step size for output file
+	Real output_interval = 0.01 * T0;
+	Real Dt = 0.1 * output_interval; /**< Time period for data observing */
+	Real dt = 0.0;					 // default acoustic time step sizes
+
+	// statistics for computing time
+	tick_count t1 = tick_count::now();
+	tick_count::interval_t interval;
+	//-----------------------------------------------------------------------------
+	// from here the time stepping begins
+	//-----------------------------------------------------------------------------
+	write_beam_states.writeToFile(0);
+	write_beam_tip_displacement.writeToFile(0);
+
+	// computation loop starts
+	while (GlobalStaticVariables::physical_time_ < end_time)
+	{
+		Real integration_time = 0.0;
+		// integrate time (loop) until the next output time
+		while (integration_time < output_interval)
+		{
+
+			Real relaxation_time = 0.0;
+			while (relaxation_time < Dt)
+			{
+				NosbPD_firstStep.exec(dt);
+				NosbPD_secondStep.exec(dt);
+				NosbPD_thirdStep.exec(dt);
+				NosbPD_fourthStep.exec(dt);
+
+				constraint_beam_base.exec();				
+
+				ite++;
+				dt = 0.5 * computing_time_step_size.exec();
+				relaxation_time += dt;
+				integration_time += dt;
+				GlobalStaticVariables::physical_time_ += dt;
+
+				if (ite % 100 == 0) {
+					std::cout << "	N=" << ite << " Time: "
+						<< GlobalStaticVariables::physical_time_ << "	dt: "
+						<< dt << "\n";
+					log_file << "	N=" << ite << " Time: "
+						<< GlobalStaticVariables::physical_time_ << "	dt: "
+						<< dt << "\n";
+				}
+			}
+		}
+
+		write_beam_tip_displacement.writeToFile(ite);
+
+		tick_count t2 = tick_count::now();
+		write_beam_states.writeToFile();
+		tick_count t3 = tick_count::now();
+		interval += t3 - t2;
+	}
+	tick_count t4 = tick_count::now();
+
+	tick_count::interval_t tt;
+	tt = t4 - t1 - interval;
+	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
+
+	if (system.generate_regression_data_)
+	{
+		// The lift force at the cylinder is very small and not important in this case.
+		write_beam_tip_displacement.generateDataBase(Vec2d(1.0e-2, 1.0e-2), Vec2d(1.0e-2, 1.0e-2));
+	}
+	else
+	{
+		write_beam_tip_displacement.newResultTest();
+	}
+
 
 	return 0;
 }

@@ -80,6 +80,12 @@ namespace SPH
 		return lambda0_ * almansi_strain.trace() * Matd::Identity() + 2.0 * G0_ * almansi_strain;
 	}
 	//=================================================================================================//
+	Matd LinearElasticSolid::StressHW(Matd& vel_grad, Matd& stress_old, size_t particle_index_i)
+	{
+		//Only validated for HughesWingetSolid
+		return Matd::Zero();
+	}
+	//=================================================================================================//
 	Real LinearElasticSolid::VolumetricKirchhoff(Real J)
 	{
 		return K0_ * J * (J - 1);
@@ -284,7 +290,7 @@ namespace SPH
 		}
 	}
 	//=================================================================================================//
-	Matd HugherWingetSolid::StressHW(Matd& G, Matd& stress_old, size_t particle_index_i)
+	Matd HughesWingetSolid::StressHW(Matd& G, Matd& stress_old, size_t particle_index_i)
 	{
 		//Symmetric part of G: rate of deformation tensor / rate of strain tensor
 		Matd Gsymm = (G + G.transpose()) * 0.5;
