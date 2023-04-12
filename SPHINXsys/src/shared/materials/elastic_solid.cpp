@@ -14,6 +14,18 @@ namespace SPH
 		ct0_ = sqrt(E0_ / rho0_);
 		cs0_ = sqrt(G0_ / rho0_);
 	};
+
+	//=================================================================================================//
+	Real ElasticSolid::getBulkModulusforHGC(Vecd& vector)
+	{
+		size_t ndim = vector.size();		
+		if (ndim == 2) {
+			return E0_ / 2.0 / (1 - nu_);
+		}
+		else if (ndim == 3) {
+			return K0_;
+		}
+	}
 	//=================================================================================================//
 	Matd ElasticSolid::NumericalDampingRightCauchy(
 		Matd &F, Matd &dF_dt, Real smoothing_length, size_t particle_index_i)
@@ -309,4 +321,5 @@ namespace SPH
 
 		return delta_sigma + trial_sigma;
 	}
+	
 }

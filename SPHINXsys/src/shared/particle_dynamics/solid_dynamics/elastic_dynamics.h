@@ -327,6 +327,30 @@ namespace SPH
 		protected:			
 			StdLargeVec<Vecd>& pos_, & vel_, & acc_;
 		};
+		/**
+		* @Created by Haotian Shi from SJTU
+		* @class LittleWoodHourGlassControl
+		* @brief Hourglass displacement mode control in bond force format
+		* Littlewood, D. J. (2011, January). ASME (Vol. 54945, pp. 567-576).
+		*/
+		class LittleWoodHourGlassControl : public LocalDynamics, public NosbPDSolidDataInner
+		{
+		public:
+			//hourglass constant coefficient, range: [1e-3, 1e2]
+			Real Chg;
+			Kernel* kernel_ptr;
+			explicit LittleWoodHourGlassControl(BaseInnerRelation& inner_relation, Kernel* kernel);
+			virtual ~LittleWoodHourGlassControl() {};
+			void interaction(size_t index_i, Real dt = 0.0);
+
+		protected:
+			ElasticSolid& elastic_solid_;
+			Real rho0_;
+			StdLargeVec<int>& particleLive_;
+			StdLargeVec<Real>& Vol_;
+			StdLargeVec<Vecd>& pos_, & acc_;
+			StdLargeVec<Matd>& F_;
+		};
 	}
 }
 #endif // ELASTIC_DYNAMICS_H

@@ -110,6 +110,8 @@ int main(int ac, char *av[])
 	beam_body.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	beam_body.generateParticles<ParticleGeneratorLattice>();
 
+	
+
 	size_t particle_num_s = beam_body.getBaseParticles().total_real_particles_;
 
 	ObserverBody beam_observer(system, "BeamObserver");
@@ -139,6 +141,8 @@ int main(int ac, char *av[])
 	InteractionWithUpdate<solid_dynamics::NosbPDSecondStep> NosbPD_secondStep(beam_body_inner);
 	InteractionDynamics<solid_dynamics::NosbPDThirdStep> NosbPD_thirdStep(beam_body_inner);
 	SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(beam_body);
+	//hourglass displacement mode control by LittleWood method
+	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(beam_body_inner, beam_body.sph_adaptation_->getKernel());
 
 	// clamping a solid body part. This is softer than a direct constraint
 	BodyRegionByParticle beam_base(beam_body, makeShared<MultiPolygonShape>(createBeamConstrainShape()));
@@ -190,7 +194,7 @@ int main(int ac, char *av[])
 	// time step size for output file
 	Real output_interval = 0.01 * T0;
 	Real Dt = 0.1 * output_interval; /**< Time period for data observing */
-	Real dt = 1.0e-6;					 // default acoustic time step sizes
+	Real dt = 0.0;					 // default acoustic time step sizes
 
 	// statistics for computing time
 	tick_count t1 = tick_count::now();
@@ -212,22 +216,25 @@ int main(int ac, char *av[])
 			Real relaxation_time = 0.0;
 			while (relaxation_time < Dt)
 			{
-				initialize_a_solid_step.exec(dt);
+				initialize_a_solid_step.parallel_exec(dt);
 
-				NosbPD_firstStep.exec(dt);
-				NosbPD_secondStep.exec(dt);
-				NosbPD_thirdStep.exec(dt);
-				NosbPD_fourthStep.exec(dt);
+				NosbPD_firstStep.parallel_exec(dt);
+				NosbPD_secondStep.parallel_exec(dt);
 
-				constraint_beam_base.exec();				
+				hourglass_control.parallel_exec(dt);
+
+				NosbPD_thirdStep.parallel_exec(dt);
+				NosbPD_fourthStep.parallel_exec(dt);
+
+				constraint_beam_base.parallel_exec();
 
 				ite++;
-				//dt = 0.1 * computing_time_step_size.exec();
+				dt = 0.1 * computing_time_step_size.parallel_exec();
 				relaxation_time += dt;
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
 
-				if (ite % 100 == 0) {
+				if (ite % 1000 == 0) {
 					std::cout << "	N=" << ite << " Time: "
 						<< GlobalStaticVariables::physical_time_ << "	dt: "
 						<< dt << "\n";

@@ -387,5 +387,46 @@ namespace SPH
 			vel_[index_i] += acc_[index_i] * dt;
 			pos_[index_i] += vel_[index_i] * dt * 0.5;
 		}
+		//=================================================================================================//
+		LittleWoodHourGlassControl::
+			LittleWoodHourGlassControl(BaseInnerRelation& inner_relation, Kernel* kernel)
+			: LocalDynamics(inner_relation.getSPHBody()), NosbPDSolidDataInner(inner_relation),
+			elastic_solid_(particles_->elastic_solid_), particleLive_(particles_->particleLive_),
+			Vol_(particles_->Vol_), pos_(particles_->pos_), acc_(particles_->acc_), F_(particles_->F_),
+			kernel_ptr(kernel)
+		{
+			rho0_ = particles_->elastic_solid_.ReferenceDensity();
+			Chg = 5.0;
+		}
+		//=================================================================================================//
+		void LittleWoodHourGlassControl::interaction(size_t index_i, Real dt)
+		{
+			if (particleLive_[index_i] == 1) {
+
+				Real horizon = kernel_ptr -> CutOffRadius();
+				Real bond_const = 12.0 * elastic_solid_.getBulkModulusforHGC(pos_[index_i]) / Pi / powerN(horizon, 3);
+				Vecd dhg_force = Vecd::Zero();
+
+				const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
+				for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+				{
+					size_t index_j = inner_neighborhood.j_[n];
+
+					Vecd r_ij = -inner_neighborhood.r_ij_[n] * inner_neighborhood.e_ij_[n];
+					if (inner_neighborhood.bondLive_[n]) {
+
+						Vecd r_ij_predict = F_[index_i] * r_ij;
+						Vecd pos_j_predict = pos_[index_i] + r_ij_predict;
+						Vecd hour_dir = pos_j_predict - pos_[index_j];
+						Vecd eta = pos_[index_j] - pos_[index_i];
+						Real hproj = hour_dir.transpose() * eta;
+
+						dhg_force += Chg * bond_const * hproj / r_ij.norm() / eta.norm() * Vol_[index_j] * eta;
+					}
+				}
+				acc_[index_i] -= dhg_force / rho0_;
+			}
+		}
+
 	}
 }
