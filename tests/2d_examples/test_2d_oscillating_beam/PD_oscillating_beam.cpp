@@ -11,12 +11,12 @@ using namespace SPH;
 //------------------------------------------------------------------------------
 // global parameters for the case
 //------------------------------------------------------------------------------
-Real PL = 0.1;	// beam length
+Real PL = 0.2;	// beam length
 Real PH = 0.02; // for thick plate; =0.01 for thin plate
-Real SL = 0.02; // depth of the insert
+Real SL = 0.06; // depth of the insert
 // reference particle spacing
-Real resolution_ref = PH / 40.0;
-Real BW = resolution_ref * 0; // boundary width, at least three particles
+Real resolution_ref = PH / 10.0;
+Real BW = resolution_ref * 4; // boundary width, at least three particles
 /** Domain bounds of the system. */
 BoundingBox system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
 								 Vec2d(PL + 3.0 * BW, PL / 2.0));
@@ -25,7 +25,7 @@ BoundingBox system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
 //----------------------------------------------------------------------
 Real rho0_s = 1.0e3;		 // reference density
 Real Youngs_modulus = 2.0e6; // reference Youngs modulus
-Real poisson = 0.333;		 // Poisson ratio
+Real poisson = 0.3975;		 // Poisson ratio
 //----------------------------------------------------------------------
 //	Parameters for initial condition on velocity
 //----------------------------------------------------------------------
@@ -35,7 +35,7 @@ Real N = cos(kl) + cosh(kl);
 Real Q = 2.0 * (cos(kl) * sinh(kl) - sin(kl) * cosh(kl));
 Real vf = 0.05;
 Real R = PL / (0.5 * Pi);
-Real gravity_g = 9.8;
+Real gravity_g = 0.0;
 //----------------------------------------------------------------------
 //	Geometric shapes used in the system.
 //----------------------------------------------------------------------
@@ -88,7 +88,7 @@ MultiPolygon createBeamConstrainShape()
 {
 	MultiPolygon multi_polygon;
 	multi_polygon.addAPolygon(beam_base_shape, ShapeBooleanOps::add);
-	//multi_polygon.addAPolygon(beam_shape, ShapeBooleanOps::sub);
+	multi_polygon.addAPolygon(beam_shape, ShapeBooleanOps::sub);
 	return multi_polygon;
 };
 //------------------------------------------------------------------------------
@@ -182,14 +182,14 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	system.initializeSystemCellLinkedLists();
 	system.initializeSystemConfigurations();
-	//beam_initial_velocity.exec();
+	beam_initial_velocity.exec();
 	beam_shapeMatrix.exec();
 	
 	//----------------------------------------------------------------------
 	//	Setup computing time-step controls.
 	//----------------------------------------------------------------------
 	int ite = 0;
-	Real T0 = 0.2;
+	Real T0 = 1.0;
 	Real end_time = T0;
 	// time step size for output file
 	Real output_interval = 0.01 * T0;
