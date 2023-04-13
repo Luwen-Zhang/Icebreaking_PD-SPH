@@ -70,7 +70,7 @@ namespace SPH
 			void interaction(size_t index_i, Real dt = 0.0);
 
 		protected:
-			StdLargeVec<Real> contact_density_;
+			StdLargeVec<Real> &contact_density_;
 			StdLargeVec<Real> &mass_;
 			StdVec<StdLargeVec<Real> *> contact_mass_;
 			StdVec<Real> offset_W_ij_;

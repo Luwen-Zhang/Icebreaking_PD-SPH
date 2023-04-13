@@ -58,6 +58,8 @@ namespace SPH
 		StdLargeVec<Matd> B_;	 /**< configuration correction for linear reproducing */
 		Solid &solid_;
 
+		StdLargeVec<Real> contact_density_; /**< contact density Added by Haotian Shi from SJTU */
+
 		/** Get the kernel gradient in weak form. */
 		virtual Vecd getKernelGradient(size_t index_i, size_t index_j, Real dW_ijV_j, Vecd &e_ij) override;
 		/** Get wall average velocity when interacting with fluid. */

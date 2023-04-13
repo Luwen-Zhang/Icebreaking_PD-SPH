@@ -341,6 +341,7 @@ namespace SPH
 			: LinearElasticSolid(rho0, youngs_modulus, poisson_ratio)
 		{
 			material_type_name_ = "HughesWingetSolid";
+			setContactStiffness(0.9 * c0_);
 		};
 		virtual ~HughesWingetSolid() {};
 

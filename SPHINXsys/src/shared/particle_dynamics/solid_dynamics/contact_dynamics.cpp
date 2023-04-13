@@ -35,10 +35,10 @@ namespace SPH
 		ContactDensitySummation::
 			ContactDensitySummation(SurfaceContactRelation &solid_body_contact_relation)
 			: LocalDynamics(solid_body_contact_relation.getSPHBody()),
-			  ContactDynamicsData(solid_body_contact_relation), mass_(particles_->mass_),
-			  offset_W_ij_(StdVec<Real>(contact_configuration_.size(), 0.0))
+			  ContactDynamicsData(solid_body_contact_relation), contact_density_(particles_->contact_density_), 
+			mass_(particles_->mass_), offset_W_ij_(StdVec<Real>(contact_configuration_.size(), 0.0))
 		{
-			particles_->registerVariable(contact_density_, "ContactDensity");
+			//particles_->registerVariable(contact_density_, "ContactDensity");
 			for (size_t k = 0; k != contact_particles_.size(); ++k)
 			{
 				contact_mass_.push_back(&(contact_particles_[k]->mass_));

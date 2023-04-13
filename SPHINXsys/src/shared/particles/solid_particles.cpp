@@ -19,6 +19,8 @@ namespace SPH
 		registerVariable(n_, "NormalDirection");
 		registerVariable(n0_, "InitialNormalDirection", [&](size_t i) -> Vecd { return n_[i];});
 		registerVariable(B_, "CorrectionMatrix", [&](size_t i) -> Matd { return Matd::Identity();});
+
+		registerVariable(contact_density_, "ContactDensity");
 	} 
 	//=================================================================================================//
 	Vecd SolidParticles::getKernelGradient(size_t index_i, size_t index_j, Real dW_ijV_j, Vecd &e_ij)
