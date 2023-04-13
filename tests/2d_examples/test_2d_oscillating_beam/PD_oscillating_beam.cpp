@@ -129,7 +129,7 @@ int main(int ac, char *av[])
 	//-----------------------------------------------------------------------------
 	SimpleDynamics<BeamInitialCondition> beam_initial_velocity(beam_body);
 
-	// corrected strong configuration
+	// calculate shape Matrix
 	InteractionWithUpdate<solid_dynamics::NosbPDShapeMatrix> beam_shapeMatrix(beam_body_inner);
 
 	// time step size calculation

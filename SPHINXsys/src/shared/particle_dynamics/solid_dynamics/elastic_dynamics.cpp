@@ -396,7 +396,7 @@ namespace SPH
 			kernel_ptr(kernel)
 		{
 			rho0_ = particles_->elastic_solid_.ReferenceDensity();
-			Chg = 5.0;
+			Chg = 0.5;
 		}
 		//=================================================================================================//
 		void LittleWoodHourGlassControl::interaction(size_t index_i, Real dt)

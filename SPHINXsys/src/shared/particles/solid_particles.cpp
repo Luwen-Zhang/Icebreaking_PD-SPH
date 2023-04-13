@@ -358,7 +358,7 @@ namespace SPH
 		 * add basic output particle data
 		 */
 		//addVariableToWrite<Matd>("shapeK");
-		addVariableToWrite<Matd>("shapeK_1");
+		//addVariableToWrite<Matd>("shapeK_1");
 		addVariableToWrite<Matd>("CauchyStress");
 				
 	}
