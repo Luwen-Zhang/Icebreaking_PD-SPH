@@ -183,7 +183,7 @@ int main(int ac, char *av[])
 	// time step size calculation
 	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> computing_time_step_size(beam_body);
 	
-	SimpleDynamics<TimeStepInitialization> initialize_a_solid_step(beam_body, makeShared<Gravity>(Vecd(0.0, -gravity_g)));
+	SimpleDynamics<solid_dynamics::PDTimeStepInitialization> initialize_a_solid_step(beam_body, makeShared<Gravity>(Vecd(0.0, -gravity_g)));
 	//stress relaxation for the beam by Hughes-Winget algorithm
 	SimpleDynamics<solid_dynamics::NosbPDFirstStep> NosbPD_firstStep(beam_body);
 	InteractionWithUpdate<solid_dynamics::NosbPDSecondStep> NosbPD_secondStep(beam_body_inner);

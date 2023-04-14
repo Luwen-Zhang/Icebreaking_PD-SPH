@@ -230,6 +230,26 @@ namespace SPH
 		};
 
 		/**
+		 * @Created by Haotian Shi from SJTU
+		 * @class PDTimeStepInitialization
+		 * @brief initialize a time step for a PDbody.
+		 */
+		class PDTimeStepInitialization
+			: public BaseTimeStepInitialization,
+			public NosbPDSolidDataSimple
+		{
+		protected:
+			StdLargeVec<int>& particleLive_;
+			StdLargeVec<Vecd>& pos_, & acc_prior_;
+
+		public:
+			PDTimeStepInitialization(SPHBody& sph_body, SharedPtr<Gravity> gravity_ptr = makeShared<Gravity>(Vecd::Zero()));
+			virtual ~PDTimeStepInitialization() {};
+
+			void update(size_t index_i, Real dt = 0.0);
+		};
+
+		/**
 		 * Created by Haotian Shi from SJTU
 		 * @class NosbPDShapeMatrix
 		 * @brief obtain the shape matrix in non-ordinary state based peridynamics		 
@@ -356,29 +376,25 @@ namespace SPH
 		* @class NosbPDCheckBondLive
 		* @brief basic class used to breaking bonds
 		*/
-		template <class EquivalentVar>
 		class NosbPDCheckBondLive : public LocalDynamics, public NosbPDSolidDataInner
 		{
 		public:
-			explicit NosbPDCheckBondLive(BaseInnerRelation& inner_relation)
-				: LocalDynamics(inner_relation.getSPHBody()), NosbPDSolidDataInner(inner_relation),
-				critical_value_(Infinity), particleLive_(particles_->particleLive_), 
-				pos_(particles_->pos_) {};
+			explicit NosbPDCheckBondLive(BaseInnerRelation& inner_relation);
 			virtual ~NosbPDCheckBondLive() {};
 			
-			virtual bool checkBondLive(EquivalentVar & EquivalentVar, Real & stretch_rate) = 0;
+			virtual bool checkBondLive(Matd & EquivalentVar, Real & stretch_rate) = 0;
 
 		protected:	
 			Real critical_value_;
 			StdLargeVec<int>& particleLive_;
-			StdLargeVec<Vecd>& pos_;
+			StdLargeVec<Vecd>& pos_, & vel_, & acc_;
 		};
 		/**
 		* @Created by Haotian Shi from SJTU
 		* @class BondBreakByPrinStress
 		* @brief fracture criteria based on MAX principal stress
 		*/
-		class BondBreakByPrinStress : public NosbPDCheckBondLive<Matd>
+		class BondBreakByPrinStress : public NosbPDCheckBondLive
 		{
 		public:
 			explicit BondBreakByPrinStress(BaseInnerRelation& inner_relation);

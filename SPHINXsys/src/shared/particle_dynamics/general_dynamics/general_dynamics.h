@@ -78,7 +78,6 @@ namespace SPH
 
 		void update(size_t index_i, Real dt = 0.0);
 	};
-
 	/**
 	 * @class RandomizeParticlePosition
 	 * @brief Randomize the initial particle position

@@ -215,6 +215,15 @@ namespace SPH
 			F_[index_i] += dF_dt_[index_i] * dt * 0.5;
 		}
 		//=================================================================================================//
+		// //=================================================================================================//
+		PDTimeStepInitialization::PDTimeStepInitialization(SPHBody& sph_body, SharedPtr<Gravity> gravity_ptr)
+			: BaseTimeStepInitialization(sph_body, gravity_ptr), NosbPDSolidDataSimple(sph_body),
+			particleLive_(particles_->particleLive_), pos_(particles_->pos_), acc_prior_(particles_->acc_prior_) {}
+		//=================================================================================================//
+		void PDTimeStepInitialization::update(size_t index_i, Real dt)
+		{
+			acc_prior_[index_i] = particleLive_[index_i] * gravity_->InducedAcceleration(pos_[index_i]);
+		}
 		//=================================================================================================//
 		NosbPDShapeMatrix::
 			NosbPDShapeMatrix(BaseInnerRelation& inner_relation)
@@ -428,9 +437,15 @@ namespace SPH
 			}
 		}
 		//=================================================================================================//
+		NosbPDCheckBondLive::
+			NosbPDCheckBondLive(BaseInnerRelation& inner_relation)
+			: LocalDynamics(inner_relation.getSPHBody()), NosbPDSolidDataInner(inner_relation),
+			critical_value_(Infinity), particleLive_(particles_->particleLive_),
+			pos_(particles_->pos_), vel_(particles_->vel_),	acc_(particles_->acc_) {}
+		//=================================================================================================//
 		BondBreakByPrinStress::
 			BondBreakByPrinStress(BaseInnerRelation& inner_relation)
-			: NosbPDCheckBondLive<Matd>(inner_relation),
+			: NosbPDCheckBondLive(inner_relation),
 			stress_(particles_->stress_) {
 			critical_value_ = 4.0e4;
 		}
@@ -438,7 +453,7 @@ namespace SPH
 		bool BondBreakByPrinStress::checkBondLive(Matd& stress_eq, Real& stretch_rate)
 		{
 			Real val_eq = stress_eq.eigenvalues().real().maxCoeff();
-			if (val_eq > critical_value_ || stretch_rate > 1.0) {
+			if (val_eq > critical_value_ || stretch_rate > 0.5) {
 				return false;
 			}
 			else {
@@ -470,6 +485,9 @@ namespace SPH
 				}
 				if (bondcount < 1) {
 					particleLive_[index_i] = 0;
+					pos_[index_i] = { 0,0 };
+					vel_[index_i] = { 0,0 };
+					acc_[index_i] = { 0,0 };
 					std::cout << "Particle_index_i = " << index_i << " becomes a FREE Particle !" << "\n";
 				}
 			}
