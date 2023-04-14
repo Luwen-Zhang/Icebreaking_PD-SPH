@@ -80,6 +80,12 @@ public:
 //------------------------------------------------------------------------------
 int main(int ac, char *av[])
 {
+	/*Matd AA{ {2,3},{2,1} };
+	Vecd BB = AA.eigenvalues().real();
+	std::cout << AA  << "\n"
+		<< AA.eigenvalues().real() << "\n"
+		<< AA.maxCoeff();*/
+	
 	//----------------------------------------------------------------------
 	//	Build up the environment of a SPHSystem with global controls.
 	//----------------------------------------------------------------------
@@ -185,7 +191,8 @@ int main(int ac, char *av[])
 	SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(beam_body);
 	//hourglass displacement mode control by LittleWood method
 	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(beam_body_inner, beam_body.sph_adaptation_->getKernel());
-	
+	//breaking bonds based on the MAX principal stress criteria
+	InteractionDynamics<solid_dynamics::BondBreakByPrinStress> check_bondLive(beam_body_inner);
 	/** Algorithms for solid-solid contact. */
 	InteractionDynamics<solid_dynamics::ContactDensitySummation> beam_update_contact_density(beam_ball_contact);
 	InteractionDynamics<solid_dynamics::ContactForce> beam_compute_solid_contact_forces(beam_ball_contact);
@@ -230,7 +237,7 @@ int main(int ac, char *av[])
 	//	Setup computing time-step controls.
 	//----------------------------------------------------------------------
 	int ite = 0;
-	Real T0 = 0.5;
+	Real T0 = 0.1;
 	Real end_time = T0;
 	// time step size for output file
 	Real output_interval = 0.01 * T0;
@@ -262,6 +269,9 @@ int main(int ac, char *av[])
 				beam_compute_solid_contact_forces.parallel_exec(dt);
 
 				NosbPD_firstStep.parallel_exec(dt);
+
+				check_bondLive.parallel_exec(dt);
+
 				NosbPD_secondStep.parallel_exec(dt);
 
 				hourglass_control.parallel_exec(dt);

@@ -345,6 +345,8 @@ namespace SPH
 		};
 		virtual ~HughesWingetSolid() {};
 
+		Real critical_value_;
+
 		/** Cauchy stress updated by velocity gradient */
 		virtual Matd StressHW(Matd& vel_grad, Matd& stress_old, size_t particle_index_i) override;
 	

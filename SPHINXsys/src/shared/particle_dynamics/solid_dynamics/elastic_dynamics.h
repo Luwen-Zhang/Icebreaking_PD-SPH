@@ -351,6 +351,46 @@ namespace SPH
 			StdLargeVec<Vecd>& pos_, & acc_;
 			StdLargeVec<Matd>& F_;
 		};
+		/**
+		* @Created by Haotian Shi from SJTU
+		* @class NosbPDCheckBondLive
+		* @brief basic class used to breaking bonds
+		*/
+		template <class EquivalentVar>
+		class NosbPDCheckBondLive : public LocalDynamics, public NosbPDSolidDataInner
+		{
+		public:
+			explicit NosbPDCheckBondLive(BaseInnerRelation& inner_relation)
+				: LocalDynamics(inner_relation.getSPHBody()), NosbPDSolidDataInner(inner_relation),
+				critical_value_(Infinity), particleLive_(particles_->particleLive_), 
+				pos_(particles_->pos_) {};
+			virtual ~NosbPDCheckBondLive() {};
+			
+			virtual bool checkBondLive(EquivalentVar & EquivalentVar, Real & stretch_rate) = 0;
+
+		protected:	
+			Real critical_value_;
+			StdLargeVec<int>& particleLive_;
+			StdLargeVec<Vecd>& pos_;
+		};
+		/**
+		* @Created by Haotian Shi from SJTU
+		* @class BondBreakByPrinStress
+		* @brief fracture criteria based on MAX principal stress
+		*/
+		class BondBreakByPrinStress : public NosbPDCheckBondLive<Matd>
+		{
+		public:
+			explicit BondBreakByPrinStress(BaseInnerRelation& inner_relation);
+			virtual ~BondBreakByPrinStress() {};			
+
+			virtual bool checkBondLive(Matd & stress_eq, Real & stretch_rate) override;
+
+			void interaction(size_t index_i, Real dt = 0.0);
+
+		protected:
+			StdLargeVec<Matd>& stress_;
+		};
 	}
 }
 #endif // ELASTIC_DYNAMICS_H
