@@ -255,7 +255,7 @@ namespace SPH
 			: LocalDynamics(sph_body),
 			NosbPDSolidDataSimple(sph_body), 
 			elastic_solid_(particles_->elastic_solid_),	rho_(particles_->rho_), 
-			pos_(particles_->pos_), vel_(particles_->vel_), 
+			pos_(particles_->pos_), vel_(particles_->vel_), acc_old_(particles_->acc_old_),
 			acc_(particles_->acc_), acc_prior_(particles_->acc_prior_), F_(particles_->F_)
 		{
 			rho0_ = particles_->elastic_solid_.ReferenceDensity();		
@@ -263,6 +263,7 @@ namespace SPH
 		//=================================================================================================//
 		void NosbPDFirstStep::update(size_t index_i, Real dt)
 		{
+			acc_old_[index_i] = acc_[index_i];
 			acc_[index_i] = acc_prior_[index_i];
 			rho_[index_i] = rho0_ / F_[index_i].determinant();
 			pos_[index_i] += vel_[index_i] * dt * 0.5;
@@ -491,6 +492,58 @@ namespace SPH
 					std::cout << "Particle_index_i = " << index_i << " becomes a FREE Particle !" << "\n";
 				}
 			}
+		}
+		//=================================================================================================//
+		ADRFirstStep::ADRFirstStep(SPHBody& sph_body)
+			: LocalDynamicsReduce<Real, ReduceSum<Real>>(sph_body, Real(0.0)),
+			NosbPDSolidDataSimple(sph_body), pos0_(particles_->pos0_), pos_(particles_->pos_),
+			vel_(particles_->vel_), acc_(particles_->acc_), acc_old_(particles_->acc_old_), 
+			acc_prior_(particles_->acc_prior_) {}
+		//=================================================================================================//
+		Real ADRFirstStep::reduce(size_t index_i, Real dt)
+		{
+			Real cn1 = 0.0;
+			Vecd dacc = acc_old_[index_i] - acc_[index_i];
+			Vecd u = pos_[index_i] - pos0_[index_i];
+			Real unorm2 = u.transpose() * u;
+			for (size_t n = 0; n != Dimensions; ++n)
+			{
+				if (vel_[index_i][n] > TinyReal) {
+					
+					cn1 += unorm2 * dacc[n] / vel_[index_i][n] / dt;
+
+				}
+			}			
+			return cn1;
+		}
+		//=================================================================================================//
+		ADRSecondStep::ADRSecondStep(SPHBody& sph_body)
+			: LocalDynamicsReduce<Real, ReduceSum<Real>>(sph_body, Real(0.0)),
+			NosbPDSolidDataSimple(sph_body), pos0_(particles_->pos0_), pos_(particles_->pos_) {}
+		//=================================================================================================//
+		Real ADRSecondStep::reduce(size_t index_i, Real dt)
+		{
+				
+			Vecd u = pos_[index_i] - pos0_[index_i];
+			Real unorm2 = u.transpose() * u;
+			
+			return unorm2;
+		}
+		//=================================================================================================//
+		NosbPDFourthStepWithADR::NosbPDFourthStepWithADR(SPHBody& sph_body)
+			: LocalDynamics(sph_body),
+			NosbPDSolidDataSimple(sph_body), ADR_cn_(0.0),
+			pos_(particles_->pos_), vel_(particles_->vel_),
+			acc_(particles_->acc_) {}
+		//=================================================================================================//
+		void NosbPDFourthStepWithADR::getADRcn(Real& ADRcn) {
+			ADR_cn_ = ADRcn;
+		};
+		//=================================================================================================//
+		void NosbPDFourthStepWithADR::update(size_t index_i, Real dt)
+		{
+			vel_[index_i] = ((2.0 - ADR_cn_ * dt) * vel_[index_i] + 2.0 * acc_[index_i] * dt) / (2.0 + ADR_cn_ * dt);
+			pos_[index_i] += vel_[index_i] * dt * 0.5;
 		}
 	}
 }

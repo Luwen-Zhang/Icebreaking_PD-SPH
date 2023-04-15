@@ -90,6 +90,10 @@ namespace SPH
 		//----------------------------------------------------------------------
 		StdLargeVec<Vecd> vel_ave_; /**<  fluid time-step averaged particle velocity */
 		StdLargeVec<Vecd> acc_ave_; /**<  fluid time-step averaged particle acceleration */
+		//----------------------------------------------------------------------
+		//		for adaptive dynamic relaxtion (ADR)
+		//----------------------------------------------------------------------
+		StdLargeVec<Vecd> acc_old_; /**<  acceleration in last step */
 
 		/** Return the Lagrange strain. */
 		Matd getGreenLagrangeStrain(size_t particle_i);

@@ -284,7 +284,7 @@ namespace SPH
 			ElasticSolid& elastic_solid_;
 			Real rho0_;
 			StdLargeVec<Real>& rho_;
-			StdLargeVec<Vecd>& pos_, & vel_, & acc_, & acc_prior_;
+			StdLargeVec<Vecd>& pos_, & vel_, & acc_, & acc_old_, & acc_prior_;
 			StdLargeVec<Matd>& F_;
 		};
 
@@ -406,6 +406,61 @@ namespace SPH
 
 		protected:
 			StdLargeVec<Matd>& stress_;
+		};
+		/**
+		 * @Created by Haotian Shi from SJTU
+		 * @class ADRFirstStep
+		 * @brief computing SUM(U^T * K * U) 
+		 */
+		class ADRFirstStep : public LocalDynamicsReduce<Real, ReduceSum<Real>>,
+			public NosbPDSolidDataSimple
+		{
+		public:		
+
+			explicit ADRFirstStep(SPHBody& sph_body);
+			virtual ~ADRFirstStep() {};
+
+			Real reduce(size_t index_i, Real dt = 0.0);
+
+		protected:			
+			StdLargeVec<Vecd>& pos0_, & pos_, & vel_;
+			StdLargeVec<Vecd>& acc_, & acc_old_, & acc_prior_;
+		};
+		/**
+		 * @Created by Haotian Shi from SJTU
+		 * @class ADRSecondStep
+		 * @brief computing SUM(U^T * U)
+		 */
+		class ADRSecondStep : public LocalDynamicsReduce<Real, ReduceSum<Real>>,
+			public NosbPDSolidDataSimple
+		{
+		public:
+
+			explicit ADRSecondStep(SPHBody& sph_body);
+			virtual ~ADRSecondStep() {};
+
+			Real reduce(size_t index_i, Real dt = 0.0);
+
+		protected:
+			StdLargeVec<Vecd>& pos0_, & pos_;
+		};
+		/**
+		 * Created by Haotian Shi from SJTU
+		 * @class NosbPDFourthStepWithADR
+		 * @brief ADR time marching into n+1 step
+		 */
+		class NosbPDFourthStepWithADR : public LocalDynamics, public NosbPDSolidDataSimple
+		{
+		public:
+			explicit NosbPDFourthStepWithADR(SPHBody& sph_body);
+			virtual ~NosbPDFourthStepWithADR() {};
+
+			void update(size_t index_i, Real dt = 0.0);
+			void getADRcn(Real& ADRcn);
+
+		protected:
+			Real ADR_cn_;
+			StdLargeVec<Vecd>& pos_, & vel_, & acc_;
 		};
 	}
 }

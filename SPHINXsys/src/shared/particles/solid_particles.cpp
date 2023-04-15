@@ -47,6 +47,10 @@ namespace SPH
 		registerVariable(vel_ave_, "AverageVelocity");
 		registerVariable(acc_ave_, "AverageAcceleration");
 		/**
+		 *	register ADR data
+		 */
+		registerVariable(acc_old_, "OldAcceleration");
+		/**
 		 *	add restart output particle data
 		 */
 		addVariableToRestart<Matd>("DeformationGradient");
