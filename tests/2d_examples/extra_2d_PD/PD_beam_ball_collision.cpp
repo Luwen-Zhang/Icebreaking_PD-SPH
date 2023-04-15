@@ -306,10 +306,14 @@ int main(int ac, char *av[])
 	}
 	tick_count t4 = tick_count::now();
 
-	tick_count::interval_t tt;
+	tick_count::interval_t tt;	
+	tick_count::interval_t tt2;
 	tt = t4 - t1 - interval;
+	tt2 = t4 - t1;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
-
+	log_file << "\n" << "Total wall time for computation: " << tt.seconds() << " seconds." << endl;
+	cout << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
+	log_file << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
 	
 	return 0;
 }

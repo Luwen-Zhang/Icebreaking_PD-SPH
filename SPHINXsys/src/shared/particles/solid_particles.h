@@ -194,19 +194,39 @@ namespace SPH
 		/** Return this pointer. */
 		virtual ShellParticles *ThisObjectPtr() override { return this; };
 	};
+	/**
+	 * Created by Haotian Shi from SJTU
+	 * @class NosbPDParticles
+	 * @brief A group of particles with Non-Oridinary State Based Peridynamic body particle data.
+	 */
+	class PDParticles : public ElasticSolidParticles
+	{
+	public:
+		PDParticles(SPHBody& sph_body, ElasticSolid* elastic_solid);
+		virtual ~PDParticles() {};
+
+		StdLargeVec<int> particleLive_;	  /**<  particleLive = false, when all the bonds are broken */
+		//StdLargeVec<int> bond0_;		  /**<  number of bonds in the initial configuration */
+		StdLargeVec<int> bond_;		  /**<  number of bonds in the current configuration */
+		StdLargeVec<Real> damage_;		  /**<  Local damage */
+
+		/** Initialize variable for Nosb-PD particles. */
+		virtual void initializeOtherVariables() override;
+		/** Return this pointer. */
+		virtual PDParticles* ThisObjectPtr() override { return this; };
+	};
 
 	/**
 	 * Created by Haotian Shi from SJTU
 	 * @class NosbPDParticles
 	 * @brief A group of particles with Non-Oridinary State Based Peridynamic body particle data.
 	 */
-	class NosbPDParticles : public ElasticSolidParticles
+	class NosbPDParticles : public PDParticles
 	{
 	public:
 		NosbPDParticles(SPHBody& sph_body, ElasticSolid* elastic_solid);
 		virtual ~NosbPDParticles() {};
-
-		StdLargeVec<int> particleLive_;	  /**<  particleLive = false, when all the bonds are broken */
+				
 		StdLargeVec<Matd> shape_K_;			  /**<  shape tensor determined in the reference configuration */
 		StdLargeVec<Matd> shape_K_1_;		  /**<  inverse of shape_K */
 		//variables for Hughes-Winget algorithm

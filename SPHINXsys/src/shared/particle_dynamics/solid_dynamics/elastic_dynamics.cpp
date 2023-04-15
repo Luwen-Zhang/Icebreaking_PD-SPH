@@ -446,8 +446,8 @@ namespace SPH
 		//=================================================================================================//
 		BondBreakByPrinStress::
 			BondBreakByPrinStress(BaseInnerRelation& inner_relation)
-			: NosbPDCheckBondLive(inner_relation),
-			stress_(particles_->stress_) {
+			: NosbPDCheckBondLive(inner_relation), bond_(particles_->bond_),
+			damage_(particles_->damage_), stress_(particles_->stress_) {
 			critical_value_ = 4.0e4;
 		}
 		//=================================================================================================//
@@ -484,6 +484,8 @@ namespace SPH
 						if (inner_neighborhood.bondLive_[n]) bondcount++;
 					}
 				}
+				bond_[index_i] = bondcount;
+				damage_[index_i] = 1.0 - (1.0 * bondcount) / (1.0 * inner_neighborhood.current_size_);
 				if (bondcount < 1) {
 					particleLive_[index_i] = 0;
 					pos_[index_i] = { 0,0 };

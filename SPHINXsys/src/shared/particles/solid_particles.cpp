@@ -333,17 +333,38 @@ namespace SPH
 		}
 	}
 	//=================================================================================================//
-	NosbPDParticles::
-		NosbPDParticles(SPHBody& sph_body, ElasticSolid* elastic_solid)
+	PDParticles::
+		PDParticles(SPHBody& sph_body, ElasticSolid* elastic_solid)
 		: ElasticSolidParticles(sph_body, elastic_solid) {}
 	//=================================================================================================//
-	void NosbPDParticles::initializeOtherVariables()
+	void PDParticles::initializeOtherVariables()
 	{
 		ElasticSolidParticles::initializeOtherVariables();
 		/**
 		 *	register particle data
 		 */
 		registerVariable(particleLive_, "ParticleLive", [&](size_t i) -> int { return 1; });
+		//registerVariable(bond0_, "bond0", [&](size_t i) -> int { return 0; });
+		registerVariable(bond_, "bond", [&](size_t i) -> int { return 0; });
+		registerVariable(damage_, "damage");	
+
+		/**
+		 * add basic output particle data
+		 */		 
+		addVariableToWrite<Real>("damage");
+
+	}
+	//=================================================================================================//
+	NosbPDParticles::
+		NosbPDParticles(SPHBody& sph_body, ElasticSolid* elastic_solid)
+		: PDParticles(sph_body, elastic_solid) {}
+	//=================================================================================================//
+	void NosbPDParticles::initializeOtherVariables()
+	{
+		PDParticles::initializeOtherVariables();
+		/**
+		 *	register particle data
+		 */		
 		registerVariable(shape_K_, "shapeK");
 		registerVariable(shape_K_1_, "shapeK_1");
 

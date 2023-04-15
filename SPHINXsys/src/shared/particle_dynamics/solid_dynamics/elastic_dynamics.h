@@ -405,6 +405,8 @@ namespace SPH
 			void interaction(size_t index_i, Real dt = 0.0);
 
 		protected:
+			StdLargeVec<int>& bond_;
+			StdLargeVec<Real>& damage_;
 			StdLargeVec<Matd>& stress_;
 		};
 		/**

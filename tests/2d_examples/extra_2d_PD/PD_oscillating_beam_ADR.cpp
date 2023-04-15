@@ -145,7 +145,6 @@ int main(int ac, char *av[])
 	ReduceDynamics<solid_dynamics::ADRFirstStep> computing_cn1(beam_body);
 	ReduceDynamics<solid_dynamics::ADRSecondStep> computing_cn2(beam_body);
 	
-
 	SimpleDynamics<solid_dynamics::NosbPDFourthStepWithADR> NosbPD_fourthStepADR(beam_body);
 	//hourglass displacement mode control by LittleWood method
 	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(beam_body_inner, beam_body.sph_adaptation_->getKernel());
@@ -278,18 +277,14 @@ int main(int ac, char *av[])
 	tick_count t4 = tick_count::now();
 
 	tick_count::interval_t tt;
+	tick_count::interval_t tt2;
 	tt = t4 - t1 - interval;
+	tt2 = t4 - t1;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
-
-	if (system.generate_regression_data_)
-	{
-		// The lift force at the cylinder is very small and not important in this case.
-		write_beam_tip_displacement.generateDataBase(Vec2d(1.0e-2, 1.0e-2), Vec2d(1.0e-2, 1.0e-2));
-	}
-	else
-	{
-		write_beam_tip_displacement.newResultTest();
-	}
+	log_file << "\n" << "Total wall time for computation: " << tt.seconds() << " seconds." << endl;
+	cout << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
+	log_file << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
+	
 
 
 	return 0;
