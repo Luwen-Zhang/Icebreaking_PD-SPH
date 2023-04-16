@@ -397,7 +397,7 @@ namespace SPH
 		class BondBreakByPrinStress : public NosbPDCheckBondLive
 		{
 		public:
-			explicit BondBreakByPrinStress(BaseInnerRelation& inner_relation);
+			explicit BondBreakByPrinStress(BaseInnerRelation& inner_relation, Real& cr_value);
 			virtual ~BondBreakByPrinStress() {};			
 
 			virtual bool checkBondLive(Matd & stress_eq, Real & stretch_rate) override;

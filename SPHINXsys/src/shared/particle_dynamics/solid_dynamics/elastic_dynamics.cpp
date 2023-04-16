@@ -445,10 +445,10 @@ namespace SPH
 			pos_(particles_->pos_), vel_(particles_->vel_),	acc_(particles_->acc_) {}
 		//=================================================================================================//
 		BondBreakByPrinStress::
-			BondBreakByPrinStress(BaseInnerRelation& inner_relation)
+			BondBreakByPrinStress(BaseInnerRelation& inner_relation, Real& cr_value)
 			: NosbPDCheckBondLive(inner_relation), bond_(particles_->bond_),
 			damage_(particles_->damage_), stress_(particles_->stress_) {
-			critical_value_ = 4.0e4;
+			critical_value_ = cr_value;
 		}
 		//=================================================================================================//
 		bool BondBreakByPrinStress::checkBondLive(Matd& stress_eq, Real& stretch_rate)
@@ -488,9 +488,9 @@ namespace SPH
 				damage_[index_i] = 1.0 - (1.0 * bondcount) / (1.0 * inner_neighborhood.current_size_);
 				if (bondcount < 1) {
 					particleLive_[index_i] = 0;
-					pos_[index_i] = { 0,0 };
-					vel_[index_i] = { 0,0 };
-					acc_[index_i] = { 0,0 };
+					pos_[index_i] = Vecd::Zero();
+					vel_[index_i] = Vecd::Zero();
+					acc_[index_i] = Vecd::Zero();
 					std::cout << "Particle_index_i = " << index_i << " becomes a FREE Particle !" << "\n";
 				}
 			}
