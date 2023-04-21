@@ -43,8 +43,8 @@ StdVec<Vecd> observation_location = {GateP_lb};
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
-Real rho0_f = 1.0;						   /**< Reference density of fluid. */
-Real gravity_g = 9.8e-3;				   /**< Value of gravity. */
+Real rho0_f = 1000.0;						   /**< Reference density of fluid. */
+Real gravity_g = 9.8;				   /**< Value of gravity. */
 Real U_f = 1.0;							   /**< Characteristic velocity. */
 Real c_f = 20.0 * sqrt(140.0 * gravity_g); /**< Reference sound speed. */
 Real mu_f = 0.0;
@@ -52,9 +52,9 @@ Real k_f = 0.0;
 //----------------------------------------------------------------------
 //	Material parameters of the elastic gate.
 //----------------------------------------------------------------------
-Real rho0_s = 1.1;	 /**< Reference density of gate. */
-Real poisson = 0.47; /**< Poisson ratio. */
-Real Ae = 7.8e3;	 /**< Normalized Youngs Modulus. */
+Real rho0_s = 2700;	 /**< Reference density of gate. */
+Real poisson = 0.3; /**< Poisson ratio. */
+Real Ae = 7.8e5;	 /**< Normalized Youngs Modulus. */
 Real Youngs_modulus = Ae * rho0_f * U_f * U_f;
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
@@ -286,7 +286,7 @@ int main()
 	//----------------------------------------------------------------------
 	int number_of_iterations = 0;
 	int screen_output_interval = 10;
-	Real end_time = 100.0;
+	Real end_time = 10.0;
 	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					/**< Default acoustic time step sizes. */
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
