@@ -273,6 +273,7 @@ namespace SPH
 				: BasePressureForceAccelerationFromFluidforPD(true, contact_relation)
 			{
 				particles_->registerVariable(force_from_fluid_, "PressureForceFromFluid");
+				particles_->addVariableToWrite<Vecd>("PressureForceFromFluid");
 			};
 			virtual ~BasePressureForceAccelerationFromFluidforPD() {};
 
@@ -294,9 +295,11 @@ namespace SPH
 						Real r_ij = contact_neighborhood.r_ij_[n];
 						Real face_wall_external_acceleration = (acc_prior_k[index_j] - acc_ave_[index_i]).dot(e_ij);
 						//Real p_in_wall = p_k[index_j] + rho_n_k[index_j] * r_ij * SMAX(0.0, face_wall_external_acceleration);
-						Real p_in_wall = p_k[index_j];
+						Real p_in_wall = fabs(p_k[index_j]);
 						Real u_jump = 2.0 * (vel_k[index_j] - vel_ave_[index_i]).dot(n_[index_i]);
-						force += (riemann_solvers_k.DissipativePJump(u_jump) - (p_in_wall + p_k[index_j])) *
+						/*force += (riemann_solvers_k.DissipativePJump(u_jump) - (p_in_wall + p_k[index_j])) *
+							e_ij * Vol_[index_i] * contact_neighborhood.dW_ijV_j_[n];*/
+						force += (- (p_in_wall + p_k[index_j])) *
 							e_ij * Vol_[index_i] * contact_neighborhood.dW_ijV_j_[n];
 					}
 				}

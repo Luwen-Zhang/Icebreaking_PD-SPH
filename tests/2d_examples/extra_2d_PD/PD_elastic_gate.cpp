@@ -209,6 +209,9 @@ int main()
 	 SimpleDynamics<solid_dynamics::NosbPDFourthStepWithADR> NosbPD_fourthStepADR(gate);
 	//hourglass displacement mode control by LittleWood method
 	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(gate_inner_relation, gate.sph_adaptation_->getKernel());
+	//Numerical Damping
+	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD> numerical_damping(gate_inner_relation, gate.sph_adaptation_->getKernel());
+	
 	// ADR_cn calculation
 	ReduceDynamics<solid_dynamics::ADRFirstStep> computing_cn1(gate);
 	ReduceDynamics<solid_dynamics::ADRSecondStep> computing_cn2(gate);	
@@ -332,8 +335,9 @@ int main()
 					NosbPD_firstStep.parallel_exec(dt_s);					
 					NosbPD_secondStep.parallel_exec(dt_s);
 					hourglass_control.parallel_exec(dt_s);
+					numerical_damping.parallel_exec(dt_s);
 					NosbPD_thirdStep.parallel_exec(dt_s);
-					cn1 = SMAX(TinyReal, computing_cn1.parallel_exec(dt));
+					/*cn1 = SMAX(TinyReal, computing_cn1.parallel_exec(dt));
 					cn2 = computing_cn2.parallel_exec(dt);
 					if (cn2 > TinyReal) {
 						ADR_cn = 2.0 * sqrt(cn1 / cn2);
@@ -342,7 +346,7 @@ int main()
 						ADR_cn = 0.0;
 					}
 					ADR_cn = 0.001 * ADR_cn;
-					NosbPD_fourthStepADR.getADRcn(ADR_cn);
+					NosbPD_fourthStepADR.getADRcn(ADR_cn);*/
 					NosbPD_fourthStepADR.parallel_exec(dt_s);
 
 					gate_constraint.parallel_exec(dt_s);

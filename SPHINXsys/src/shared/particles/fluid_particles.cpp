@@ -32,6 +32,10 @@ namespace SPH
 		//		add restart output particle data
 		//----------------------------------------------------------------------
 		addVariableToRestart<Real>("Pressure");
+		/**
+		 *	add output particle data
+		 */
+		addVariableToWrite<Real>("Pressure");
 	}
 	//=================================================================================================//
 	ViscoelasticFluidParticles::

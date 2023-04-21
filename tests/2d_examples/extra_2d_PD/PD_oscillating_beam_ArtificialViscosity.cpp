@@ -144,7 +144,7 @@ int main(int ac, char *av[])
 	SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(beam_body);
 	//hourglass displacement mode control by LittleWood method
 	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(beam_body_inner, beam_body.sph_adaptation_->getKernel());
-	//hourglass displacement mode control by LittleWood method
+	//Numerical Damping
 	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD> artificial_viscosity(beam_body_inner, beam_body.sph_adaptation_->getKernel());
 
 	// clamping a solid body part. This is softer than a direct constraint
