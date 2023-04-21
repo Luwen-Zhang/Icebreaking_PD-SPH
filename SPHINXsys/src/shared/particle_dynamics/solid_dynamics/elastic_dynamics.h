@@ -373,6 +373,53 @@ namespace SPH
 		};
 		/**
 		* @Created by Haotian Shi from SJTU
+		* @class MonaghanArtificialViscosityforPD
+		* @brief shear viscosity proposed by Monaghan, 1989
+		*/
+		class MonaghanArtificialViscosityforPD : public LocalDynamics, public NosbPDSolidDataInner
+		{
+		public:
+			//hourglass constant coefficient, range: [1e-3, 1e2]
+			Real alpha, beta;
+			Kernel* kernel_ptr;
+			explicit MonaghanArtificialViscosityforPD(BaseInnerRelation& inner_relation, Kernel* kernel);
+			virtual ~MonaghanArtificialViscosityforPD() {};
+			void interaction(size_t index_i, Real dt = 0.0);
+
+		protected:
+			ElasticSolid& elastic_solid_;
+			Real rho0_, c0_;
+			StdLargeVec<int>& particleLive_;
+			StdLargeVec<Real>& Vol_;
+			StdLargeVec<Vecd>& pos_, & vel_, & acc_;
+		};
+		/**
+		* @Created by Haotian Shi from SJTU
+		* @class PairNumericalDampingforPD
+		* @brief shear viscosity proposed by Monaghan, 1989
+		*/
+		class PairNumericalDampingforPD : public LocalDynamics, public NosbPDSolidDataInner
+		{
+		public:
+			//hourglass constant coefficient, range: [1e-3, 1e2]
+			Kernel* kernel_ptr;
+			explicit PairNumericalDampingforPD(BaseInnerRelation& inner_relation, Kernel* kernel);
+			virtual ~PairNumericalDampingforPD() {};
+			void interaction(size_t index_i, Real dt = 0.0);
+
+		protected:
+			ElasticSolid& elastic_solid_;
+			Real rho0_, c0_;
+			Real numerical_dissipation_factor_;
+			Real inv_W0_ = 1.0 / sph_body_.sph_adaptation_->getKernel()->W0(ZeroVecd);
+			Real smoothing_length_;
+			StdLargeVec<int>& particleLive_;
+			StdLargeVec<Real>& Vol_;
+			StdLargeVec<Vecd>& pos_, & vel_, & acc_;
+			StdLargeVec<Matd>& F_;
+		};
+		/**
+		* @Created by Haotian Shi from SJTU
 		* @class NosbPDCheckBondLive
 		* @brief basic class used to breaking bonds
 		*/

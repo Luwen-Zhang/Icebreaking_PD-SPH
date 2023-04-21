@@ -238,7 +238,7 @@ namespace SPH
 			for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
 			{
 				size_t index_j = inner_neighborhood.j_[n];
-
+				//r_j - r_i
 				Vecd r_ij = -inner_neighborhood.r_ij_[n] * inner_neighborhood.e_ij_[n];
 				local_configuration += inner_neighborhood.W_ij_[n] * Vol_[index_j] * (r_ij * r_ij.transpose());
 			}
@@ -295,7 +295,7 @@ namespace SPH
 				for (size_t n = 0; n != inner_neighborhood.current_size_; ++n) 
 				{
 					size_t index_j = inner_neighborhood.j_[n];
-
+					//r_j - r_i
 					Vecd r_ij = -inner_neighborhood.r_ij_[n] * inner_neighborhood.e_ij_[n];
 					if (inner_neighborhood.bondLive_[n]) {
 						eta = pos_[index_j] - pos_[index_i];
@@ -333,8 +333,9 @@ namespace SPH
 				Real detF = F_[index_i].determinant();
 				Real detF_half = F_half_[index_i].determinant();
 				if (detF < 0.0 || detF_half < 0.0) {
-					std::cout << "Particle_index = " << index_i << "has been disabled since det F < 0"
-						<< GlobalStaticVariables::physical_time_ << "dt:" << dt << "\n";
+					std::cout << "Particle_index = " << index_i << " has been disabled since det F < 0" << "\n"
+						<< "physical_time_ = " << GlobalStaticVariables::physical_time_ << "\n"
+						<< "dt:" << dt << "\n";
 					system("pause");
 					exit(0);
 				}
@@ -421,7 +422,7 @@ namespace SPH
 				for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
 				{
 					size_t index_j = inner_neighborhood.j_[n];
-
+					//r_j - r_i
 					Vecd r_ij = -inner_neighborhood.r_ij_[n] * inner_neighborhood.e_ij_[n];
 					if (inner_neighborhood.bondLive_[n]) {
 
@@ -435,6 +436,91 @@ namespace SPH
 					}
 				}
 				acc_[index_i] -= dhg_force / rho0_;
+			}
+		}
+		//=================================================================================================//
+		MonaghanArtificialViscosityforPD::
+			MonaghanArtificialViscosityforPD(BaseInnerRelation& inner_relation, Kernel* kernel)
+			: LocalDynamics(inner_relation.getSPHBody()), NosbPDSolidDataInner(inner_relation),
+			elastic_solid_(particles_->elastic_solid_), particleLive_(particles_->particleLive_),
+			Vol_(particles_->Vol_), pos_(particles_->pos_), vel_(particles_->vel_), acc_(particles_->acc_),
+			kernel_ptr(kernel)
+		{
+			rho0_ = particles_->elastic_solid_.ReferenceDensity();
+			c0_ = elastic_solid_.ReferenceSoundSpeed();
+			alpha = 0.1;
+			beta = 0.0;
+		}
+		//=================================================================================================//
+		void MonaghanArtificialViscosityforPD::interaction(size_t index_i, Real dt)
+		{
+			if (particleLive_[index_i] == 1) {
+
+				Real horizon = kernel_ptr->CutOffRadius();
+				Real phi_2 = 0.01 * horizon * horizon;
+				Vecd visc_force = Vecd::Zero();
+
+				const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
+				for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+				{
+					size_t index_j = inner_neighborhood.j_[n];
+
+					Vecd e_ij = inner_neighborhood.e_ij_[n];
+					Real dW_ijV_j = inner_neighborhood.dW_ijV_j_[n];
+					if (inner_neighborhood.bondLive_[n]) {
+
+						Vecd vel_ij = vel_[index_i] - vel_[index_j];
+						Vecd x_ij = pos_[index_i] - pos_[index_j];
+						Real phi_ij = horizon * SMIN(vel_ij.dot(x_ij), 0.0) / (x_ij.dot(x_ij) + phi_2);
+
+						visc_force += (-alpha * c0_ * phi_ij + beta * phi_ij * phi_ij) * dW_ijV_j * e_ij;
+					}
+				}
+				acc_[index_i] += visc_force / rho0_;
+			}
+		}
+		//=================================================================================================//
+		PairNumericalDampingforPD::
+			PairNumericalDampingforPD(BaseInnerRelation& inner_relation, Kernel* kernel)
+			: LocalDynamics(inner_relation.getSPHBody()), NosbPDSolidDataInner(inner_relation),
+			elastic_solid_(particles_->elastic_solid_), particleLive_(particles_->particleLive_),
+			Vol_(particles_->Vol_), pos_(particles_->pos_), vel_(particles_->vel_), 
+			acc_(particles_->acc_), F_(particles_->F_),
+			kernel_ptr(kernel)
+		{
+			rho0_ = particles_->elastic_solid_.ReferenceDensity();
+			c0_ = elastic_solid_.ReferenceSoundSpeed();
+			numerical_dissipation_factor_ = 0.25;
+			smoothing_length_ = sph_body_.sph_adaptation_->ReferenceSmoothingLength();
+		}
+		//=================================================================================================//
+		void PairNumericalDampingforPD::interaction(size_t index_i, Real dt)
+		{
+			if (particleLive_[index_i] == 1) {
+
+				Vecd damping_force = Vecd::Zero();
+
+				const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
+				for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+				{
+					size_t index_j = inner_neighborhood.j_[n];
+
+					Real dW_ijV_j = inner_neighborhood.dW_ijV_j_[n];
+					Vecd e_ij = inner_neighborhood.e_ij_[n];
+					Real r_ij = inner_neighborhood.r_ij_[n];
+					if (inner_neighborhood.bondLive_[n]) {
+						
+						Real dim_r_ij_1 = Dimensions / r_ij;
+						Vecd pos_jump = pos_[index_i] - pos_[index_j];
+						Vecd vel_jump = vel_[index_i] - vel_[index_j];
+						Real strain_rate = dim_r_ij_1 * dim_r_ij_1 * pos_jump.dot(vel_jump);
+						Real weight = inner_neighborhood.W_ij_[n] * inv_W0_;
+						Matd numerical_stress_ij =
+							0.5 * (F_[index_i] + F_[index_j]) * elastic_solid_.PairNumericalDamping(strain_rate, smoothing_length_);
+						damping_force += dW_ijV_j *	(numerical_dissipation_factor_ * weight * numerical_stress_ij) * e_ij;
+					}
+				}
+				acc_[index_i] += damping_force / rho0_;
 			}
 		}
 		//=================================================================================================//
