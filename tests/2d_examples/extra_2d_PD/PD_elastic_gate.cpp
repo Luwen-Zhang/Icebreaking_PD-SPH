@@ -54,7 +54,7 @@ Real k_f = 0.0;
 //----------------------------------------------------------------------
 Real rho0_s = 2700;	 /**< Reference density of gate. */
 Real poisson = 0.3; /**< Poisson ratio. */
-Real Ae = 7.8e5;	 /**< Normalized Youngs Modulus. */
+Real Ae = 7.8e6;	 /**< Normalized Youngs Modulus. */
 Real Youngs_modulus = Ae * rho0_f * U_f * U_f;
 //----------------------------------------------------------------------
 //	Cases-dependent geometries

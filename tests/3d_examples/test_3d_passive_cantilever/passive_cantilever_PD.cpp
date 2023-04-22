@@ -59,7 +59,7 @@ public:
 
 	void update(size_t index_i, Real dt)
 	{
-		Real coff = 0.3;
+		Real coff = 1.0;
 		if (pos_[index_i][0] > 0.0)
 		{
 			vel_[index_i][1] = coff * 5.0 * sqrt(3.0);
@@ -104,9 +104,15 @@ int main()
 	SimpleDynamics<solid_dynamics::NosbPDFirstStep> NosbPD_firstStep(cantilever_body);
 	InteractionWithUpdate<solid_dynamics::NosbPDSecondStep> NosbPD_secondStep(cantilever_body_inner);
 	InteractionDynamics<solid_dynamics::NosbPDThirdStep> NosbPD_thirdStep(cantilever_body_inner);
-	SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(cantilever_body);
+	//SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(cantilever_body);
+	SimpleDynamics<solid_dynamics::NosbPDFourthStepWithADR> NosbPD_fourthStepADR(cantilever_body);
 	//hourglass displacement mode control by LittleWood method
 	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(cantilever_body_inner, cantilever_body.sph_adaptation_->getKernel());
+	//Numerical Damping
+	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD> numerical_damping(cantilever_body_inner, cantilever_body.sph_adaptation_->getKernel());
+	// ADR_cn calculation
+	ReduceDynamics<solid_dynamics::ADRFirstStep> computing_cn1(cantilever_body);
+	ReduceDynamics<solid_dynamics::ADRSecondStep> computing_cn2(cantilever_body);
 
 	/** Constrain the holder. */
 	BodyRegionByParticle holder(cantilever_body, 
@@ -157,6 +163,11 @@ int main()
 	Real end_time = 1.0;
 	Real output_period = end_time / 100.0;
 	Real dt = 0.0;
+
+	Real cn1 = 0.0;
+	Real cn2 = 0.0;
+	Real ADR_cn = 0.0;
+
 	/** Statistics for computing time. */
 	tick_count t1 = tick_count::now();
 	tick_count::interval_t interval;
@@ -168,7 +179,7 @@ int main()
 		Real integration_time = 0.0;
 		while (integration_time < output_period)
 		{
-			if (ite % 1000 == 0) {
+			if (ite % 100 == 0) {
 				std::cout << "	N=" << ite << " Time: "
 					<< GlobalStaticVariables::physical_time_ << "	dt: "
 					<< dt << "\n";
@@ -180,11 +191,20 @@ int main()
 
 			NosbPD_firstStep.parallel_exec(dt);
 			NosbPD_secondStep.parallel_exec(dt);
-
 			hourglass_control.parallel_exec(dt);
-
+			numerical_damping.parallel_exec(dt);
 			NosbPD_thirdStep.parallel_exec(dt);
-			NosbPD_fourthStep.parallel_exec(dt);
+			cn1 = SMAX(TinyReal, computing_cn1.parallel_exec(dt));
+			cn2 = computing_cn2.parallel_exec(dt);
+			if (cn2 > TinyReal) {
+				ADR_cn = 2.0 * sqrt(cn1 / cn2);
+			}
+			else {
+				ADR_cn = 0.0;
+			}
+			ADR_cn = 0.01 * ADR_cn;
+			NosbPD_fourthStepADR.getADRcn(ADR_cn);
+			NosbPD_fourthStepADR.parallel_exec(dt);
 
 			constraint_holder.parallel_exec(dt);
 			
@@ -202,8 +222,13 @@ int main()
 	tick_count t4 = tick_count::now();
 
 	tick_count::interval_t tt;
+	tick_count::interval_t tt2;
 	tt = t4 - t1 - interval;
+	tt2 = t4 - t1;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
+	log_file << "\n" << "Total wall time for computation: " << tt.seconds() << " seconds." << endl;
+	cout << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
+	log_file << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
 
 	write_displacement.newResultTest();
 
