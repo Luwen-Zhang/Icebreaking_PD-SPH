@@ -35,8 +35,6 @@ Vec3d fiber_direction(1.0, 0.0, 0.0);
 Vec3d sheet_direction(0.0, 1.0, 0.0);
 Real bulk_modulus = Youngs_modulus / 3.0 / (1.0 - 2.0 * poisson);
 
-Real gravity_g = 0.0;
-
 /** Define the cantilever shape. */
 class Cantilever : public ComplexShape
 {
@@ -59,11 +57,10 @@ public:
 
 	void update(size_t index_i, Real dt)
 	{
-		Real coff = 1.0;
 		if (pos_[index_i][0] > 0.0)
 		{
-			vel_[index_i][1] = coff * 5.0 * sqrt(3.0);
-			vel_[index_i][2] = coff * 5.0;
+			vel_[index_i][1] = 5.0 * sqrt(3.0);
+			vel_[index_i][2] = 5.0;
 		}
 	};
 };
@@ -75,12 +72,10 @@ int main()
 	/** Setup the system. Please the make sure the global domain bounds are correctly defined. */
 	SPHSystem system(system_domain_bounds, resolution_ref);
 	/** create a Cantilever body, corresponding material, particles and reaction model. */
-	PDBody cantilever_body(system, makeShared<Cantilever>("PDBody"));
-	cantilever_body.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
+	SolidBody cantilever_body(system, makeShared<Cantilever>("CantileverBody"));
+	cantilever_body.defineParticlesAndMaterial<
+		ElasticSolidParticles, LinearElasticSolid>(rho0_s, Youngs_modulus, poisson);
 	cantilever_body.generateParticles<ParticleGeneratorLattice>();
-
-	size_t particle_num_s = cantilever_body.getBaseParticles().total_real_particles_;
-
 	/** Define Observer. */
 	ObserverBody cantilever_observer(system, "CantileverObserver");
 	cantilever_observer.generateParticles<ObserverParticleGenerator>(observation_location);
@@ -93,27 +88,15 @@ int main()
 	 * This section define all numerical methods will be used in this case.
 	 */
 	SimpleDynamics<CantileverInitialCondition> initialization(cantilever_body);
-	/** calculate shape Matrix */
-	InteractionWithUpdate<solid_dynamics::NosbPDShapeMatrix>
-		cantilever_shapeMatrix(cantilever_body_inner);
+	/** Corrected configuration. */
+	InteractionDynamics<solid_dynamics::CorrectConfiguration>
+		corrected_configuration(cantilever_body_inner);
 	/** Time step size calculation. */
 	ReduceDynamics<solid_dynamics::AcousticTimeStepSize>
 		computing_time_step_size(cantilever_body);
-	SimpleDynamics<TimeStepInitialization> initialize_a_solid_step(cantilever_body, makeShared<Gravity>(Vecd(0.0, 0.0, -gravity_g)));
-	//stress relaxation for the beam by Hughes-Winget algorithm
-	SimpleDynamics<solid_dynamics::NosbPDFirstStep> NosbPD_firstStep(cantilever_body);
-	InteractionWithUpdate<solid_dynamics::NosbPDSecondStep> NosbPD_secondStep(cantilever_body_inner);
-	InteractionDynamics<solid_dynamics::NosbPDThirdStep> NosbPD_thirdStep(cantilever_body_inner);
-	//SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(cantilever_body);
-	SimpleDynamics<solid_dynamics::NosbPDFourthStepWithADR> NosbPD_fourthStepADR(cantilever_body);
-	//hourglass displacement mode control by LittleWood method
-	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(cantilever_body_inner, cantilever_body.sph_adaptation_->getKernel());
-	//Numerical Damping
-	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD> numerical_damping(cantilever_body_inner, cantilever_body.sph_adaptation_->getKernel());
-	// ADR_cn calculation
-	ReduceDynamics<solid_dynamics::ADRFirstStep> computing_cn1(cantilever_body);
-	ReduceDynamics<solid_dynamics::ADRSecondStep> computing_cn2(cantilever_body);
-
+	/** active and passive stress relaxation. */
+	Dynamics1Level<solid_dynamics::Integration1stHalf> stress_relaxation_first_half(cantilever_body_inner);
+	Dynamics1Level<solid_dynamics::Integration2ndHalf> stress_relaxation_second_half(cantilever_body_inner);
 	/** Constrain the holder. */
 	BodyRegionByParticle holder(cantilever_body, 
 		makeShared<TransformShape<GeometricShapeBox>>(Transformd(translation_holder), halfsize_holder, "Holder"));
@@ -123,29 +106,6 @@ int main()
 	BodyStatesRecordingToVtp write_states(io_environment, system.real_bodies_);
 	RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>>
 		write_displacement("Position", io_environment, cantilever_observer_contact);
-	//Log file
-	std::string Logpath = io_environment.output_folder_ + "/SimLog.txt";
-	if (fs::exists(Logpath))
-	{
-		fs::remove(Logpath);
-	}
-	std::ofstream log_file(Logpath.c_str(), ios::trunc);
-	std::cout << "# PARAM SETING #" << "\n" << "\n"
-		<< "	particle_spacing_ref = " << resolution_ref << "\n"
-		<< "	particle_num_s = " << particle_num_s << "\n" << "\n"
-		<< "	rho0_s = " << rho0_s << "\n"
-		<< "	Youngs_modulus = " << Youngs_modulus << "\n"
-		<< "	poisson = " << poisson << "\n" << "\n"
-		<< "	gravity_g = " << gravity_g << "\n" << "\n"
-		<< "# COMPUTATION START # " << "\n" << "\n";
-	log_file << "#PARAM SETING#" << "\n" << "\n"
-		<< "	particle_spacing_ref = " << resolution_ref << "\n"
-		<< "	particle_num_s = " << particle_num_s << "\n" << "\n"
-		<< "	rho0_s = " << rho0_s << "\n"
-		<< "	Youngs_modulus = " << Youngs_modulus << "\n"
-		<< "	poisson = " << poisson << "\n" << "\n"
-		<< "	gravity_g = " << gravity_g << "\n" << "\n"
-		<< "#COMPUTATION START HERE# " << "\n" << "\n";
 	/**
 	 * From here the time stepping begins.
 	 * Set the starting time.
@@ -155,7 +115,7 @@ int main()
 	system.initializeSystemConfigurations();
 	/** apply initial condition */
 	initialization.parallel_exec();
-	cantilever_shapeMatrix.parallel_exec();
+	corrected_configuration.parallel_exec();
 	write_states.writeToFile(0);
 	write_displacement.writeToFile(0);
 	/** Setup physical parameters. */
@@ -163,11 +123,6 @@ int main()
 	Real end_time = 2.0;
 	Real output_period = end_time / 200.0;
 	Real dt = 0.0;
-
-	Real cn1 = 0.0;
-	Real cn2 = 0.0;
-	Real ADR_cn = 0.0;
-
 	/** Statistics for computing time. */
 	tick_count t1 = tick_count::now();
 	tick_count::interval_t interval;
@@ -179,40 +134,20 @@ int main()
 		Real integration_time = 0.0;
 		while (integration_time < output_period)
 		{
+			if (ite % 100 == 0)
+			{
+				std::cout << "N=" << ite << " Time: "
+						  << GlobalStaticVariables::physical_time_ << "	dt: "
+						  << dt << "\n";
+			}
+			stress_relaxation_first_half.parallel_exec(dt);
+			constraint_holder.parallel_exec(dt);
+			stress_relaxation_second_half.parallel_exec(dt);
+
 			ite++;
-			dt = 0.1 * computing_time_step_size.parallel_exec();
+			dt = computing_time_step_size.parallel_exec();
 			integration_time += dt;
 			GlobalStaticVariables::physical_time_ += dt;
-			if (ite % 100 == 0) {
-				std::cout << "	N=" << ite << " Time: "
-					<< GlobalStaticVariables::physical_time_ << "	dt: "
-					<< dt << "\n";
-				log_file << "	N=" << ite << " Time: "
-					<< GlobalStaticVariables::physical_time_ << "	dt: "
-					<< dt << "\n";
-			}
-			initialize_a_solid_step.parallel_exec(dt);
-
-			NosbPD_firstStep.parallel_exec(dt);
-			NosbPD_secondStep.parallel_exec(dt);
-			hourglass_control.parallel_exec(dt);
-			numerical_damping.parallel_exec(dt);
-			NosbPD_thirdStep.parallel_exec(dt);
-			/*cn1 = SMAX(TinyReal, computing_cn1.parallel_exec(dt));
-			cn2 = computing_cn2.parallel_exec(dt);
-			if (cn2 > TinyReal) {
-				ADR_cn = 2.0 * sqrt(cn1 / cn2);
-			}
-			else {
-				ADR_cn = 0.0;
-			}
-			ADR_cn = 0.01 * ADR_cn;
-			NosbPD_fourthStepADR.getADRcn(ADR_cn);*/
-			NosbPD_fourthStepADR.parallel_exec(dt);
-
-			constraint_holder.parallel_exec(dt);
-			
-			
 		}
 		write_displacement.writeToFile(ite);
 		tick_count t2 = tick_count::now();
@@ -223,13 +158,8 @@ int main()
 	tick_count t4 = tick_count::now();
 
 	tick_count::interval_t tt;
-	tick_count::interval_t tt2;
 	tt = t4 - t1 - interval;
-	tt2 = t4 - t1;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
-	log_file << "\n" << "Total wall time for computation: " << tt.seconds() << " seconds." << endl;
-	cout << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
-	log_file << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
 
 	write_displacement.newResultTest();
 

@@ -257,7 +257,7 @@ int main(int ac, char *av[])
 				else {
 					ADR_cn = 0.0;
 				}
-				ADR_cn = 0.01 * ADR_cn;
+				ADR_cn = 0.005 * ADR_cn;
 				NosbPD_fourthStepADR.getADRcn(ADR_cn);
 				NosbPD_fourthStepADR.parallel_exec(dt);
 
