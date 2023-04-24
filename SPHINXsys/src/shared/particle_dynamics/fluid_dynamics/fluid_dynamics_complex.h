@@ -189,6 +189,28 @@ namespace SPH
 		using Integration1stHalfRiemannWithWall = BaseIntegration1stHalfWithWall<Integration1stHalfRiemann>;
 
 		/**
+		 * @class BaseIntegration1stHalfWithWallforPD
+		 * @brief  template class pressure relaxation scheme together with wall boundary
+		 * @specially developed for NosbPD
+		 */
+		template <class BaseIntegration1stHalfType>
+		class BaseIntegration1stHalfWithWallforPD : public InteractionWithWall<BaseIntegration1stHalfType>
+		{
+		public:
+			template <typename... Args>
+			BaseIntegration1stHalfWithWallforPD(Args &&...args)
+				: InteractionWithWall<BaseIntegration1stHalfType>(std::forward<Args>(args)...) {};
+			virtual ~BaseIntegration1stHalfWithWallforPD() {};
+			void interaction(size_t index_i, Real dt = 0.0);
+
+		protected:
+			virtual Vecd computeNonConservativeAcceleration(size_t index_i) override;
+		};
+
+		using Integration1stHalfWithWallforPD = BaseIntegration1stHalfWithWallforPD<Integration1stHalf>;
+		using Integration1stHalfRiemannWithWallforPD = BaseIntegration1stHalfWithWallforPD<Integration1stHalfRiemann>;
+
+		/**
 		 * @class BaseExtendIntegration1stHalfWithWall
 		 * @brief template class for pressure relaxation scheme with wall boundary
 		 * and considering non-conservative acceleration term and wall penalty to prevent
@@ -246,6 +268,24 @@ namespace SPH
 		using Integration2ndHalfWithWall = BaseIntegration2ndHalfWithWall<Integration2ndHalf>;
 		using Integration2ndHalfRiemannWithWall = BaseIntegration2ndHalfWithWall<Integration2ndHalfRiemann>;
 
+		/**
+		 * @class BaseIntegration2ndHalfWithWallforPD
+		 * @brief template density relaxation scheme without using different Riemann solvers.
+		 * The difference from the free surface version is that no Riemann problem is applied
+		 */
+		template <class BaseIntegration2ndHalfType>
+		class BaseIntegration2ndHalfWithWallforPD : public InteractionWithWall<BaseIntegration2ndHalfType>
+		{
+		public:
+			template <typename... Args>
+			BaseIntegration2ndHalfWithWallforPD(Args &&...args)
+				: InteractionWithWall<BaseIntegration2ndHalfType>(std::forward<Args>(args)...) {};
+			virtual ~BaseIntegration2ndHalfWithWallforPD() {};
+			void interaction(size_t index_i, Real dt = 0.0);
+		};
+
+		using Integration2ndHalfWithWallforPD = BaseIntegration2ndHalfWithWallforPD<Integration2ndHalf>;
+		using Integration2ndHalfRiemannWithWallforPD = BaseIntegration2ndHalfWithWallforPD<Integration2ndHalfRiemann>;
 		/**
 		 * @class Oldroyd_BIntegration1stHalfWithWall
 		 * @brief  first half of the pressure relaxation scheme using Riemann solver.

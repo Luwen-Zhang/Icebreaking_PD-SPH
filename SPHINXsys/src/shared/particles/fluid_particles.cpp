@@ -36,6 +36,7 @@ namespace SPH
 		 *	add output particle data
 		 */
 		addVariableToWrite<Real>("Pressure");
+		addVariableToWrite<Real>("Density");
 	}
 	//=================================================================================================//
 	ViscoelasticFluidParticles::

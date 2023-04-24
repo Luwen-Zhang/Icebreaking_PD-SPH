@@ -158,6 +158,46 @@ namespace SPH
 		}
 		//=================================================================================================//
 		template <class BaseIntegration1stHalfType>
+		void BaseIntegration1stHalfWithWallforPD<BaseIntegration1stHalfType>::interaction(size_t index_i, Real dt)
+		{
+			BaseIntegration1stHalfType::interaction(index_i, dt);
+
+			Vecd acc_prior_i = computeNonConservativeAcceleration(index_i);
+
+			Vecd acceleration = Vecd::Zero();
+			Real rho_dissipation(0);
+			for (size_t k = 0; k < FluidWallData::contact_configuration_.size(); ++k)
+			{
+				StdLargeVec<Vecd>& acc_ave_k = *(this->wall_acc_ave_[k]);
+				Neighborhood& wall_neighborhood = (*FluidWallData::contact_configuration_[k])[index_i];
+				for (size_t n = 0; n != wall_neighborhood.current_size_; ++n)
+				{
+					size_t index_j = wall_neighborhood.j_[n];
+					Vecd& e_ij = wall_neighborhood.e_ij_[n];
+					Real dW_ijV_j = wall_neighborhood.dW_ijV_j_[n];
+					Real r_ij = wall_neighborhood.r_ij_[n];
+
+					Real face_wall_external_acceleration = (acc_prior_i - acc_ave_k[index_j]).dot(-e_ij);
+					//Real p_in_wall = this->p_[index_i] + this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
+					//Real p_in_wall = SMAX(this->p_[index_i], 0.0) + this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
+					Real p_in_wall = SMAX(this->p_[index_i], 0.1 * this->p_[index_i]);
+
+					acceleration -= (this->p_[index_i] + p_in_wall) * dW_ijV_j * e_ij;
+
+					rho_dissipation += this->riemann_solver_.DissipativeUJump(this->p_[index_i] - p_in_wall) * dW_ijV_j;
+				}
+			}
+			this->acc_[index_i] += acceleration / this->rho_[index_i];
+			this->drho_dt_[index_i] += rho_dissipation * this->rho_[index_i];
+		}
+		//=================================================================================================//
+		template <class BaseIntegration1stHalfType>
+		Vecd BaseIntegration1stHalfWithWallforPD<BaseIntegration1stHalfType>::computeNonConservativeAcceleration(size_t index_i)
+		{
+			return this->acc_prior_[index_i];
+		}
+		//=================================================================================================//
+		template <class BaseIntegration1stHalfType>
 		void BaseExtendIntegration1stHalfWithWall<BaseIntegration1stHalfType>::initialization(size_t index_i, Real dt)
 		{
 			BaseIntegration1stHalfType::initialization(index_i, dt);
@@ -232,6 +272,38 @@ namespace SPH
 					Vecd vel_in_wall = 2.0 * vel_ave_k[index_j] - this->vel_[index_i];
 					density_change_rate += (this->vel_[index_i] - vel_in_wall).dot(e_ij) * dW_ijV_j;
 					Real u_jump = 2.0 * (this->vel_[index_i] - vel_ave_k[index_j]).dot(n_k[index_j]);
+					p_dissipation += this->riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * e_ij;
+				}
+			}
+			this->drho_dt_[index_i] += density_change_rate * this->rho_[index_i];
+			this->acc_[index_i] += p_dissipation / this->rho_[index_i];
+		}
+		//=================================================================================================//
+		template <class BaseIntegration2ndHalfType>
+		void BaseIntegration2ndHalfWithWallforPD<BaseIntegration2ndHalfType>::interaction(size_t index_i, Real dt)
+		{
+			BaseIntegration2ndHalfType::interaction(index_i, dt);
+
+			Real density_change_rate = 0.0;
+			Vecd p_dissipation = Vecd::Zero();
+			for (size_t k = 0; k < FluidWallData::contact_configuration_.size(); ++k)
+			{
+				StdLargeVec<Vecd>& vel_ave_k = *(this->wall_vel_ave_[k]);
+				StdLargeVec<Vecd>& n_k = *(this->wall_n_[k]);
+				Neighborhood& wall_neighborhood = (*FluidWallData::contact_configuration_[k])[index_i];
+				for (size_t n = 0; n != wall_neighborhood.current_size_; ++n)
+				{
+					size_t index_j = wall_neighborhood.j_[n];
+					Vecd& e_ij = wall_neighborhood.e_ij_[n];
+					Real dW_ijV_j = wall_neighborhood.dW_ijV_j_[n];
+
+					//Vecd vel_in_wall = 2.0 * vel_ave_k[index_j] - this->vel_[index_i];
+					Vecd vel_in_wall = vel_ave_k[index_j];
+
+					density_change_rate += (this->vel_[index_i] - vel_in_wall).dot(e_ij) * dW_ijV_j;
+
+					Real u_jump = 2.0 * (this->vel_[index_i] - vel_ave_k[index_j]).dot(n_k[index_j]);
+
 					p_dissipation += this->riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * e_ij;
 				}
 			}

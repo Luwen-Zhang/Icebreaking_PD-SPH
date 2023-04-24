@@ -16,7 +16,7 @@ Real Dam_L = 100.0;						/**< Water block width. */
 Real Dam_H = 140.0;						/**< Water block height. */
 Real Gate_width = 5.0;					/**< Width of the gate. */
 Real Base_bottom_position = 79.0;		/**< Position of gate base. (In Y direction) */
-Real resolution_ref = Gate_width / 2.0; /**< Initial reference particle spacing. */
+Real resolution_ref = Gate_width / 8.0; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4.0;			/**< Extending width for BCs. */
 /** The offset that the rubber gate shifted above the tank. */
 Real dp_s = 0.5 * resolution_ref;

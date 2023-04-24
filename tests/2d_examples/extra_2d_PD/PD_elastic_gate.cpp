@@ -43,8 +43,8 @@ StdVec<Vecd> observation_location = {GateP_lb};
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
-Real rho0_f = 1000.0;						   /**< Reference density of fluid. */
-Real gravity_g = 9.8;				   /**< Value of gravity. */
+Real rho0_f = 1.0;						   /**< Reference density of fluid. */
+Real gravity_g = 9.8e-3;				   /**< Value of gravity. */
 Real U_f = 1.0;							   /**< Characteristic velocity. */
 Real c_f = 20.0 * sqrt(140.0 * gravity_g); /**< Reference sound speed. */
 Real mu_f = 0.0;
@@ -52,9 +52,9 @@ Real k_f = 0.0;
 //----------------------------------------------------------------------
 //	Material parameters of the elastic gate.
 //----------------------------------------------------------------------
-Real rho0_s = 2700;	 /**< Reference density of gate. */
+Real rho0_s = 20.0;	 /**< Reference density of gate. */
 Real poisson = 0.3; /**< Poisson ratio. */
-Real Ae = 7.8e6;	 /**< Normalized Youngs Modulus. */
+Real Ae = 7.5e5;	 /**< Normalized Youngs Modulus. */
 Real Youngs_modulus = Ae * rho0_f * U_f * U_f;
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
@@ -181,8 +181,8 @@ int main()
 	//----------------------------------------------------------------------
 	//	Algorithms of fluid dynamics.
 	//----------------------------------------------------------------------
-	Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWall> pressure_relaxation(water_block_complex_relation);
-	Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWall> density_relaxation(water_block_complex_relation);
+	Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWallforPD> pressure_relaxation(water_block_complex_relation);
+	Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWallforPD> density_relaxation(water_block_complex_relation);
 	InteractionWithUpdate<fluid_dynamics::DensitySummationFreeSurfaceComplex> update_density_by_summation(water_block_complex_relation);
 	SimpleDynamics<TimeStepInitialization> initialize_a_fluid_step(water_block, makeShared<Gravity>(Vecd(0.0, -gravity_g)));
 	ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
@@ -286,7 +286,7 @@ int main()
 	//----------------------------------------------------------------------
 	int number_of_iterations = 0;
 	int screen_output_interval = 10;
-	Real end_time = 10.0;
+	Real end_time = 100.0;
 	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					/**< Default acoustic time step sizes. */
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
