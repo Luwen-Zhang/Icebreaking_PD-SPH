@@ -24,7 +24,7 @@ BoundingBox system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
 Real rho0_s = 1.0e3;		 // reference density
-Real Youngs_modulus = 2.0e6; // reference Youngs modulus
+Real Youngs_modulus = 2.0e11; // reference Youngs modulus
 Real poisson = 0.3975;		 // Poisson ratio
 //----------------------------------------------------------------------
 //	Parameters for initial condition on velocity
@@ -133,7 +133,7 @@ int main(int ac, char *av[])
 	InteractionWithUpdate<solid_dynamics::NosbPDShapeMatrix> beam_shapeMatrix(beam_body_inner);
 
 	// time step size calculation
-	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> computing_time_step_size(beam_body, 0.06);
+	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> computing_time_step_size(beam_body, 0.24);
 	
 	SimpleDynamics<NormalDirectionFromBodyShape> beam_normal_direction(beam_body);
 	SimpleDynamics<TimeStepInitialization> initialize_a_solid_step(beam_body, makeShared<Gravity>(Vecd(0.0, -gravity_g)));

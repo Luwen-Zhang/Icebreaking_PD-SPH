@@ -296,7 +296,8 @@ namespace SPH
 						Real face_wall_external_acceleration = (acc_prior_k[index_j] - acc_ave_[index_i]).dot(e_ij);
 						//Real p_in_wall = p_k[index_j] + rho_n_k[index_j] * r_ij * SMAX(0.0, face_wall_external_acceleration);
 						//Real p_in_wall = SMAX(p_k[index_j], 0.0) + rho_n_k[index_j] * r_ij * SMAX(0.0, face_wall_external_acceleration);
-						Real p_in_wall = SMAX(p_k[index_j], 0.1 * p_k[index_j]);
+						Real p_in_wall = SMAX(p_k[index_j], 0.1 * p_k[index_j])
+							+ rho_n_k[index_j] * r_ij * SMAX(0.0, face_wall_external_acceleration);
 
 						Real u_jump = 2.0 * (vel_k[index_j] - vel_ave_[index_i]).dot(n_[index_i]);
 

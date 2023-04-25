@@ -180,7 +180,8 @@ namespace SPH
 					Real face_wall_external_acceleration = (acc_prior_i - acc_ave_k[index_j]).dot(-e_ij);
 					//Real p_in_wall = this->p_[index_i] + this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
 					//Real p_in_wall = SMAX(this->p_[index_i], 0.0) + this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
-					Real p_in_wall = SMAX(this->p_[index_i], 0.1 * this->p_[index_i]);
+					Real p_in_wall = SMAX(this->p_[index_i], 0.1 * this->p_[index_i])
+						+ this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
 
 					acceleration -= (this->p_[index_i] + p_in_wall) * dW_ijV_j * e_ij;
 

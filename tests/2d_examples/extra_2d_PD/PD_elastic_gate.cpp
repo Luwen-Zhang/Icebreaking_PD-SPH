@@ -52,9 +52,9 @@ Real k_f = 0.0;
 //----------------------------------------------------------------------
 //	Material parameters of the elastic gate.
 //----------------------------------------------------------------------
-Real rho0_s = 20.0;	 /**< Reference density of gate. */
+Real rho0_s = 2.0;	 /**< Reference density of gate. */
 Real poisson = 0.3; /**< Poisson ratio. */
-Real Ae = 7.5e5;	 /**< Normalized Youngs Modulus. */
+Real Ae = 7.8e3;	 /**< Normalized Youngs Modulus. */
 Real Youngs_modulus = Ae * rho0_f * U_f * U_f;
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
@@ -198,7 +198,7 @@ int main()
 	//----------------------------------------------------------------------
 	//	Algorithms of Elastic dynamics.
 	//----------------------------------------------------------------------
-	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> gate_computing_time_step_size(gate);
+	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> gate_computing_time_step_size(gate, 0.24);
 	/** calculate shape Matrix */
 	InteractionWithUpdate<solid_dynamics::NosbPDShapeMatrix> gate_shapeMatrix(gate_inner_relation);
 	//stress relaxation for the beam by Hughes-Winget algorithm
@@ -329,7 +329,7 @@ int main()
 				average_velocity_and_acceleration.initialize_displacement_.parallel_exec();
 				while (dt_s_sum < dt)
 				{
-					dt_s = 0.1 * gate_computing_time_step_size.parallel_exec();
+					dt_s = gate_computing_time_step_size.parallel_exec();
 					if (dt - dt_s_sum < dt_s) dt_s = dt - dt_s_sum;
 
 					NosbPD_firstStep.parallel_exec(dt_s);					
