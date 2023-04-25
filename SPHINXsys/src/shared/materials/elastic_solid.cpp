@@ -16,9 +16,8 @@ namespace SPH
 	};
 
 	//=================================================================================================//
-	Real ElasticSolid::getBulkModulusforHGC(Vecd& vector)
+	Real ElasticSolid::getBulkModulusforHGC(const int& ndim)
 	{
-		size_t ndim = vector.size();		
 		if (ndim == 2) {
 			return E0_ / 2.0 / (1 - nu_);
 		}

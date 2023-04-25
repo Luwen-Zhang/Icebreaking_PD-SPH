@@ -133,7 +133,7 @@ int main(int ac, char *av[])
 	InteractionWithUpdate<solid_dynamics::NosbPDShapeMatrix> beam_shapeMatrix(beam_body_inner);
 
 	// time step size calculation
-	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> computing_time_step_size(beam_body);
+	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> computing_time_step_size(beam_body, 0.06);
 	
 	SimpleDynamics<NormalDirectionFromBodyShape> beam_normal_direction(beam_body);
 	SimpleDynamics<TimeStepInitialization> initialize_a_solid_step(beam_body, makeShared<Gravity>(Vecd(0.0, -gravity_g)));
@@ -224,7 +224,7 @@ int main(int ac, char *av[])
 			while (relaxation_time < Dt)
 			{
 				ite++;
-				dt = 0.1 * computing_time_step_size.parallel_exec();
+				dt = computing_time_step_size.parallel_exec();
 				relaxation_time += dt;
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;

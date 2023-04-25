@@ -408,14 +408,15 @@ namespace SPH
 		{
 			rho0_ = particles_->elastic_solid_.ReferenceDensity();
 			Chg = 0.5;
+			Kbulk = elastic_solid_.getBulkModulusforHGC(Dimensions);
+			horizon = kernel_ptr->CutOffRadius();
 		}
 		//=================================================================================================//
 		void LittleWoodHourGlassControl::interaction(size_t index_i, Real dt)
 		{
 			if (particleLive_[index_i] == 1) {
 
-				Real horizon = kernel_ptr -> CutOffRadius();
-				Real bond_const = 12.0 * elastic_solid_.getBulkModulusforHGC(pos_[index_i]) / Pi / powerN(horizon, 3);
+				Real bond_const = 12.0 * Kbulk / Pi / powerN(horizon, 3);
 				Vecd dhg_force = Vecd::Zero();
 
 				const Neighborhood& inner_neighborhood = inner_configuration_[index_i];

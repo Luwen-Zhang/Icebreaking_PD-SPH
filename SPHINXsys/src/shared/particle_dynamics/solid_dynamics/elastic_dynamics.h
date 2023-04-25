@@ -357,7 +357,7 @@ namespace SPH
 		{
 		public:
 			//hourglass constant coefficient, range: [1e-3, 1e2]
-			Real Chg;
+			Real Chg, Kbulk, horizon;
 			Kernel* kernel_ptr;
 			explicit LittleWoodHourGlassControl(BaseInnerRelation& inner_relation, Kernel* kernel);
 			virtual ~LittleWoodHourGlassControl() {};

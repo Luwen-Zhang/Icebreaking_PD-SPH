@@ -77,7 +77,7 @@ namespace SPH
 		/** Cauchy stress through Hughes-Winget algorithm. Added by Haotian Shi from SJTU*/
 		virtual Matd StressHW(Matd& vel_grad, Matd& stress_old, size_t particle_index_i) = 0;
 		/** BulkModulus in PlaneStress or 3D. Added by Haotian Shi from SJTU*/
-		virtual Real getBulkModulusforHGC(Vecd& vector);
+		virtual Real getBulkModulusforHGC(const int& ndim);
 		/** Numerical damping stress using right Cauchy tensor. */
 		virtual Matd NumericalDampingRightCauchy(Matd &deformation, Matd &deformation_rate, Real smoothing_length, size_t particle_index_i);
 		/** Numerical damping stress using left Cauchy tensor. */
