@@ -189,6 +189,7 @@ namespace SPH
 		using Integration1stHalfRiemannWithWall = BaseIntegration1stHalfWithWall<Integration1stHalfRiemann>;
 
 		/**
+		 * Created by Haotian Shi from SJTU
 		 * @class BaseIntegration1stHalfWithWallforPD
 		 * @brief  template class pressure relaxation scheme together with wall boundary
 		 * @specially developed for NosbPD
@@ -269,6 +270,7 @@ namespace SPH
 		using Integration2ndHalfRiemannWithWall = BaseIntegration2ndHalfWithWall<Integration2ndHalfRiemann>;
 
 		/**
+		 * Created by Haotian Shi from SJTU
 		 * @class BaseIntegration2ndHalfWithWallforPD
 		 * @brief template density relaxation scheme without using different Riemann solvers.
 		 * The difference from the free surface version is that no Riemann problem is applied

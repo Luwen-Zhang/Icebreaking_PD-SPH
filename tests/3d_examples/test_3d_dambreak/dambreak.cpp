@@ -8,7 +8,7 @@
 using namespace SPH;
 
 // general parameters for geometry
-Real resolution_ref = 0.05;	  // particle spacing
+Real resolution_ref = 0.02;	  // particle spacing
 Real BW = resolution_ref * 4; // boundary width
 Real DL = 5.366;			  // tank length
 Real DH = 2.0;				  // tank height
