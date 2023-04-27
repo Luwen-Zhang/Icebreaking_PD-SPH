@@ -59,7 +59,7 @@ namespace SPH
 		 */		
 		addVariableToWrite<Vecd>("NormalDirection");
 		addDerivedVariableToWrite<Displacement>();
-		addDerivedVariableToWrite<VonMisesStress>();
+		//addDerivedVariableToWrite<VonMisesStress>();
 		addDerivedVariableToWrite<VonMisesStrain>();
 		addVariableToRestart<Matd>("DeformationGradient");
 		// get which stress measure is relevant for the material

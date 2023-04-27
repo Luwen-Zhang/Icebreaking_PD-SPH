@@ -575,9 +575,9 @@ namespace SPH
 				damage_[index_i] = 1.0 - (1.0 * bondcount) / (1.0 * inner_neighborhood.current_size_);
 				if (bondcount < 1) {
 					particleLive_[index_i] = 0;
-					pos_[index_i] = Vecd::Zero();
-					vel_[index_i] = Vecd::Zero();
-					acc_[index_i] = Vecd::Zero();
+					//pos_[index_i] = Vecd::Zero();
+					//vel_[index_i] = Vecd::Zero();
+					//acc_[index_i] = Vecd::Zero();
 					std::cout << "Particle_index_i = " << index_i << " becomes a FREE Particle !" << "\n";
 				}
 			}

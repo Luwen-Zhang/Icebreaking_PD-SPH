@@ -18,7 +18,7 @@ Real plate_Y = 0.4;				/**< thickness of the ice plate. */
 Real plate_X = 10 * plate_Y;	/**< width of the ice plate. */
 Real plate_Z = 10 * plate_Y;	/**< width of the ice plate. */
 
-Real resolution_ref = LR / 5;	  // particle spacing
+Real resolution_ref = LR / 4;	  // particle spacing
 Real BW = resolution_ref * 3; // boundary width
 
 // for material properties of the fluid
@@ -55,7 +55,7 @@ public:
 	explicit PlateShape(const std::string& shape_name) : ComplexShape(shape_name)
 	{
 		Vecd halfsize_plate(0.5 * plate_X, 0.5 * plate_Y, 0.5 * plate_Z);
-		Vecd offet_plate(0.0, LH - 0.5 * plate_Y - BW, 0.0);
+		Vecd offet_plate(0.0, LH - 0.5 * plate_Y - 0.5 * BW, 0.0);
 		Transformd translation_plate(offet_plate);
 		add<TransformShape<GeometricShapeBox>>(Transformd(translation_plate), halfsize_plate);
 	}
@@ -82,7 +82,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Build up an SPHSystem.
 	//----------------------------------------------------------------------
-	BoundingBox system_domain_bounds(Vecd(-0.5 * plate_X - BW, -BW, -0.5 * plate_Z - BW), Vecd(0.5 * plate_X - BW, 2.0 * LH + BW, 0.5 * plate_Z - BW));
+	BoundingBox system_domain_bounds(Vecd(-0.5 * plate_X - BW, -BW, -0.5 * plate_Z - BW), Vecd(0.5 * plate_X + BW, 2.0 * LH + BW, 0.5 * plate_Z + BW));
 	SPHSystem system(system_domain_bounds, resolution_ref);
 	system.handleCommandlineOptions(ac, av);
 	IOEnvironment io_environment(system);
@@ -127,7 +127,7 @@ int main(int ac, char *av[])
 	Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWallforPD> density_relaxation(water_block_complex);
 	InteractionWithUpdate<fluid_dynamics::DensitySummationFreeSurfaceComplex> update_density_by_summation(water_block_complex);
 	ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
-	ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_fluid_time_step_size(water_block);
+	ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_fluid_time_step_size(water_block,0.06);
 	//----------------------------------------------------------------------
 	//	Algorithms of FSI.
 	//----------------------------------------------------------------------	
@@ -137,7 +137,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Algorithms of Elastic dynamics.
 	//----------------------------------------------------------------------
-	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> plate_computing_time_step_size(plate, 0.24);
+	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> plate_computing_time_step_size(plate, 0.024);
 	/** calculate shape Matrix */
 	InteractionWithUpdate<solid_dynamics::NosbPDShapeMatrix> plate_shapeMatrix(plate_inner_relation);
 	//stress relaxation for the beam by Hughes-Winget algorithm
@@ -194,6 +194,7 @@ int main(int ac, char *av[])
 		<< "# COMPUTATION START # " << "\n" << "\n";
 	log_file << "#PARAM SETING#" << "\n" << "\n"
 		<< "	particle_num = " << particle_num << "\n" << "\n"
+		<< "	particle_spacing_ref = " << resolution_ref << "\n" << "\n"
 		<< "<---- Fluid Domain ---->" << "\n" << "\n"
 		<< "	particle_num_w = " << particle_num_w << "\n"
 		<< "	particle_num_f = " << particle_num_f << "\n" << "\n"
@@ -223,11 +224,13 @@ int main(int ac, char *av[])
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
 	size_t number_of_iterations = system.RestartStep();
+	size_t number_of_iterations_s = 0;
 	int screen_output_interval = 10;
-	Real end_time = 0.01;
+	Real end_time = 0.005;
 	Real output_interval = end_time / 100.0;
 	Real dt = 0.0;					// default acoustic time step sizes
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
+	Real dt_s_0 = plate_computing_time_step_size.parallel_exec();
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
@@ -263,7 +266,8 @@ int main(int ac, char *av[])
 				average_velocity_and_acceleration.initialize_displacement_.parallel_exec();
 				while (dt_s_sum < dt)
 				{
-					dt_s = plate_computing_time_step_size.parallel_exec();
+					//dt_s = plate_computing_time_step_size.parallel_exec();
+					dt_s = dt_s_0;
 					if (dt - dt_s_sum < dt_s) dt_s = dt - dt_s_sum;
 
 					NosbPD_firstStep.parallel_exec(dt_s);
@@ -276,6 +280,13 @@ int main(int ac, char *av[])
 					NosbPD_fourthStep.parallel_exec(dt_s);					
 
 					dt_s_sum += dt_s;
+					/*if (number_of_iterations_s % screen_output_interval == 0)
+					{
+						std::cout << std::fixed << std::setprecision(9) 
+							<< "		N_s=" << number_of_iterations_s 
+							<< "	dt_s = " << dt_s << "\n";
+					}
+					number_of_iterations_s++;*/
 				}
 				average_velocity_and_acceleration.update_averages_.parallel_exec(dt);
 				dt = get_fluid_time_step_size.parallel_exec();
@@ -290,12 +301,15 @@ int main(int ac, char *av[])
 					<< GlobalStaticVariables::physical_time_ 
 					<< "	Dt = " << Dt 
 					<< "	dt = " << dt 
-					<< "	dt_s = " << dt_s << "\n";
+					<< "	dt_s = " << dt_s 
+					<< "	dt / dt_s = " << dt / dt_s << "\n";
+
 				log_file << std::fixed << std::setprecision(9) << "	N=" << number_of_iterations << " Time: "
 					<< GlobalStaticVariables::physical_time_ 
 					<< "	Dt = " << Dt 
 					<< "	dt = " << dt 
-					<< "	dt_s = " << dt_s << "\n";
+					<< "	dt_s = " << dt_s
+					<< "	dt / dt_s = " << dt / dt_s << "\n";
 			}
 			number_of_iterations++;
 
