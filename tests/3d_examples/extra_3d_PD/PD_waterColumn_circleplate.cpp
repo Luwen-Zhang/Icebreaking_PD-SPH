@@ -15,8 +15,7 @@ Real inner_circle_radius = LR;
 int resolution(20);
 
 Real plate_Y = 0.4;				/**< thickness of the ice plate. */
-Real plate_X = 10 * plate_Y;	/**< width of the ice plate. */
-Real plate_Z = 10 * plate_Y;	/**< width of the ice plate. */
+Real plate_R = 5 * plate_Y;	/**< width of the ice plate. */
 
 Real resolution_ref = LR / 4;	  // particle spacing
 Real BW = resolution_ref * 3; // boundary width
@@ -54,10 +53,9 @@ class PlateShape : public ComplexShape
 public:
 	explicit PlateShape(const std::string& shape_name) : ComplexShape(shape_name)
 	{
-		Vecd halfsize_plate(0.5 * plate_X, 0.5 * plate_Y, 0.5 * plate_Z);
-		Vecd offet_plate(0.0, LH - 0.5 * plate_Y - 0.5 * BW, 0.0);
-		Transformd translation_plate(offet_plate);
-		add<TransformShape<GeometricShapeBox>>(Transformd(translation_plate), halfsize_plate);
+		Vecd offet_plate(0.0, LH - 0.5 * plate_Y - 0.5 * BW, 0.0);		
+		add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0, 1.0, 0), plate_R,
+			0.5 * plate_Y, resolution, offet_plate);
 	}
 };
 /**
@@ -82,8 +80,10 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Build up an SPHSystem.
 	//----------------------------------------------------------------------
-	BoundingBox system_domain_bounds(Vecd(-0.5 * plate_X - BW, -BW, -0.5 * plate_Z - BW), Vecd(0.5 * plate_X + BW, 2.0 * LH + BW, 0.5 * plate_Z + BW));
+	BoundingBox system_domain_bounds(Vecd(-plate_R - BW, -BW, -plate_R - BW), Vecd(plate_R + BW, 2.0 * LH + BW, plate_R + BW));
 	SPHSystem system(system_domain_bounds, resolution_ref);
+	system.setRunParticleRelaxation(false);
+	system.setReloadParticles(true);
 	system.handleCommandlineOptions(ac, av);
 	IOEnvironment io_environment(system);
 	//----------------------------------------------------------------------
@@ -97,8 +97,12 @@ int main(int ac, char *av[])
 	size_t particle_num_w = 0;
 
 	SolidBody plate(system, makeShared<PlateShape>("PDBody"));
+	plate.defineBodyLevelSetShape()->writeLevelSet(io_environment);
 	plate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
-	plate.generateParticles<ParticleGeneratorLattice>();
+	(!system.RunParticleRelaxation() && system.ReloadParticles())
+		? plate.generateParticles<ParticleGeneratorReload>(io_environment, plate.getName())
+		: plate.generateParticles<ParticleGeneratorLattice>();
+	plate.addBodyStateForRecording<Vecd>("NormalDirection");
 	size_t particle_num_s = plate.getBaseParticles().total_real_particles_;
 
 	size_t particle_num = particle_num_f + particle_num_w + particle_num_s;
@@ -116,6 +120,46 @@ int main(int ac, char *av[])
 	InnerRelation plate_inner_relation(plate);
 	ContactRelation plate_water_contact_relation(plate, { &water_block });
 	//ContactRelation plate_observer_contact_relation(plate_observer, { &plate });
+	
+	BodyStatesRecordingToVtp write_water_block_states(io_environment, system.real_bodies_);
+	if (system.RunParticleRelaxation())
+	{
+		/**
+		 * @brief 	Methods used for particle relaxation.
+		 */
+		 /** Random reset the insert body particle position. */
+		SimpleDynamics<RandomizeParticlePosition> random_column_particles(plate);
+		/** Write the body state to Vtp file. */
+		BodyStatesRecordingToVtp write_plate_to_vtp(io_environment, plate);
+		/** Write the particle reload files. */
+
+		ReloadParticleIO write_particle_reload_files(io_environment, plate);
+		/** A  Physics relaxation step. */
+		relax_dynamics::RelaxationStepInner relaxation_step_inner(plate_inner_relation);
+		/**
+		 * @brief 	Particle relaxation starts here.
+		 */
+		random_column_particles.parallel_exec(0.25);
+		relaxation_step_inner.SurfaceBounding().parallel_exec();
+		write_water_block_states.writeToFile(0.0);
+
+		/** relax particles of the insert body. */
+		int ite_p = 0;
+		while (ite_p < 2000)
+		{
+			relaxation_step_inner.parallel_exec();
+			ite_p += 1;
+			if (ite_p % 200 == 0)
+			{
+				std::cout << std::fixed << setprecision(9) << "Relaxation steps for the column body N = " << ite_p << "\n";
+				write_plate_to_vtp.writeToFile(ite_p);
+			}
+		}
+		std::cout << "The physics relaxation process of cylinder body finish !" << std::endl;
+		/** Output results. */
+		write_particle_reload_files.writeToFile(0.0);
+		return 0;
+	}
 	//----------------------------------------------------------------------
 	//	Define the numerical methods used in the simulation.
 	//	Note that there may be data dependence on the sequence of constructions.
@@ -161,7 +205,7 @@ int main(int ac, char *av[])
 	//	Define the methods for I/O operations, observations
 	//	and regression tests of the simulation.
 	//----------------------------------------------------------------------
-	BodyStatesRecordingToVtp write_water_block_states(io_environment, system.real_bodies_);
+	
 	/*RegressionTestDynamicTimeWarping<ReducedQuantityRecording<ReduceDynamics<TotalMechanicalEnergy>>>
 		write_water_mechanical_energy(io_environment, water_block, gravity_ptr);*/
 	/*RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>>
