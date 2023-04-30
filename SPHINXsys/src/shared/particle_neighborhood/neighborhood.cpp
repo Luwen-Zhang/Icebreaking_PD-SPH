@@ -152,7 +152,18 @@ namespace SPH
 	{
 		Kernel *source_kernel = body.sph_adaptation_->getKernel();
 		Kernel *target_kernel = contact_body.sph_adaptation_->getKernel();
-		kernel_ = source_kernel->SmoothingLength() > target_kernel->SmoothingLength() ? source_kernel : target_kernel;
+		//modified by Haotian Shi from SJTU
+		std::string source_name = body.getName().substr(0, 6);
+		std::string target_name = contact_body.getName().substr(0, 6);
+		if (source_name == "PDBody" && target_name == "WaterB") {
+			kernel_ = target_kernel;
+		}
+		else if (source_name == "WaterB" && target_name == "PDBody") {
+			kernel_ = source_kernel;
+		}
+		else {
+			kernel_ = source_kernel->SmoothingLength() > target_kernel->SmoothingLength() ? source_kernel : target_kernel;
+		}		
 	}
 	//=================================================================================================//
 	void NeighborBuilderContact::operator()(Neighborhood &neighborhood,
