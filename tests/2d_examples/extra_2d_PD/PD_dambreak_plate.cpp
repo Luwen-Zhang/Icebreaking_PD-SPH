@@ -162,7 +162,7 @@ int main()
 	wall_boundary.generateParticles<ParticleGeneratorLattice>();
 	size_t particle_num_w = wall_boundary.getBaseParticles().total_real_particles_;
 
-	SolidBody plate(system, makeShared<MultiPolygonShape>(createPlateShape(), "PDBody"));
+	PDBody plate(system, makeShared<MultiPolygonShape>(createPlateShape(), "PDBody"));
 	plate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	plate.generateParticles<ParticleGeneratorLattice>();
 	size_t particle_num_s = plate.getBaseParticles().total_real_particles_;

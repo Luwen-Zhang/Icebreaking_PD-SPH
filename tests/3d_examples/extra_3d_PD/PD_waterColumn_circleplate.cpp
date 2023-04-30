@@ -96,7 +96,7 @@ int main(int ac, char *av[])
 	
 	size_t particle_num_w = 0;
 
-	SolidBody plate(system, makeShared<PlateShape>("PDBody"));
+	PDBody plate(system, makeShared<PlateShape>("PDBody"));
 	plate.defineBodyLevelSetShape()->writeLevelSet(io_environment);
 	plate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	(!system.RunParticleRelaxation() && system.ReloadParticles())

@@ -23,8 +23,8 @@ namespace SPH
 		: SPHAdaptation(sph_body.getSPHSystem().resolution_ref_, h_spacing_ratio, system_refinement_ratio){
 		//Added by Haotian Shi from SJTU
 		body_name_ = sph_body.getName();
-		
-		if (body_name_ == "PDBody") {
+		std::string first_six = body_name_.substr(0, 6);
+		if (first_six == "PDBody") {
 			kernel_ptr_ = makeUnique<Winfunc>(h_ref_);
 		}
 		//==============================
