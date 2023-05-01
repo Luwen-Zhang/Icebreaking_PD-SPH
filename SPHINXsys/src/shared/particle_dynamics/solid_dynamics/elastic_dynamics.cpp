@@ -491,7 +491,7 @@ namespace SPH
 		{
 			rho0_ = particles_->elastic_solid_.ReferenceDensity();
 			c0_ = elastic_solid_.ReferenceSoundSpeed();
-			numerical_dissipation_factor_ = 1.0;
+			numerical_dissipation_factor_ = 0.25;
 			smoothing_length_ = sph_body_.sph_adaptation_->ReferenceSmoothingLength();
 		}
 		//=================================================================================================//

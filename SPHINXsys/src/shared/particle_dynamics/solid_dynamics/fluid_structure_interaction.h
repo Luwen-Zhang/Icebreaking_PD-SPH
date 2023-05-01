@@ -92,6 +92,7 @@ namespace SPH
 				: BasePressureForceAccelerationFromFluid(true, contact_relation)
 			{
 				particles_->registerVariable(force_from_fluid_, "PressureForceFromFluid");
+				particles_->addVariableToWrite<Vecd>("PressureForceFromFluid");
 			};
 			virtual ~BasePressureForceAccelerationFromFluid(){};
 
