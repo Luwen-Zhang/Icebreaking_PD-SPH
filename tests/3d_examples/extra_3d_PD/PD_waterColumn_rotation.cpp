@@ -75,6 +75,22 @@ public:
 	};
 };
 /**
+ * Rotate water initial configuration
+ */
+class PlateInitialRotation
+	: public solid_dynamics::ElasticDynamicsInitialCondition, BaseSPHBodyRotation
+{
+public:
+	explicit PlateInitialRotation(SPHBody& sph_body, Real theta_X, Real theta_Y, Real theta_Z)
+		: solid_dynamics::ElasticDynamicsInitialCondition(sph_body),
+		BaseSPHBodyRotation(theta_X, theta_Y, theta_Z) {};
+
+	void update(size_t index_i, Real dt)
+	{
+		pos_[index_i] = Q_ * pos_[index_i];
+	};
+};
+/**
  * application dependent initial condition
  */
 class WaterInitialCondition
@@ -180,7 +196,7 @@ int main(int ac, char *av[])
 	//	Define the numerical methods used in the simulation.
 	//	Note that there may be data dependence on the sequence of constructions.
 	//----------------------------------------------------------------------
-	SimpleDynamics<WaterInitialRotation> jet_pos_rotation(water_block, 0.0, Pi / 4, 0.0);
+	SimpleDynamics<WaterInitialRotation> jet_pos_rotation(water_block, 0.0, Pi / 9, 0.0);
 	SimpleDynamics<WaterInitialCondition> jet_vel_initialization(water_block);
 	SharedPtr<Gravity> gravity_ptr = makeShared<Gravity>(Vec3d(0.0, -gravity_g, 0.0));
 	SimpleDynamics<TimeStepInitialization> initialize_a_fluid_step(water_block, gravity_ptr);
@@ -198,6 +214,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Algorithms of Elastic dynamics.
 	//----------------------------------------------------------------------
+	SimpleDynamics<PlateInitialRotation> plate_pos_rotation(plate, 0.0, Pi / 4, 0.0);
 	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> plate_computing_time_step_size(plate, 0.024);
 	/** calculate shape Matrix */
 	InteractionWithUpdate<solid_dynamics::NosbPDShapeMatrix> plate_shapeMatrix(plate_inner_relation);
@@ -279,6 +296,7 @@ int main(int ac, char *av[])
 	system.initializeSystemCellLinkedLists();
 	system.initializeSystemConfigurations();
 	jet_pos_rotation.parallel_exec();
+	plate_pos_rotation.parallel_exec();
 	jet_vel_initialization.parallel_exec();
 	plate_normal_direction.parallel_exec();
 	plate_shapeMatrix.parallel_exec();
