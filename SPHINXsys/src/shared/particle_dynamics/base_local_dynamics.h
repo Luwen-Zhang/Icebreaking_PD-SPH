@@ -134,5 +134,64 @@ namespace SPH
 	};
 	template <typename ReturnType, typename Operation>
 	using LocalDynamicsReduce = BaseLocalDynamicsReduce<ReturnType, Operation, SPHBody>;
+
+	/**
+	 * @Created by Haotian Shi from SJTU
+	 * @class BaseSPHBodyRotation
+	 * @brief Rotate the SPHBody in X, Y, Z direction.
+	 */
+	class BaseSPHBodyRotation
+	{
+	private:
+		Matd Q_X_, Q_Y_, Q_Z_;
+	public:
+		Matd Q_;
+		BaseSPHBodyRotation(Real theta_X = 0.0, Real theta_Y = 0.0, Real theta_Z = 0.0)
+		{
+			if (Dimensions == 2) {
+				Q_Z_(0, 0) = cos(theta_Z);
+				Q_Z_(1, 0) = -sin(theta_Z);
+				Q_Z_(0, 1) =  sin(theta_Z);
+				Q_Z_(1, 1) =  cos(theta_Z);
+
+				Q_ = Q_Z_;
+			}
+			else if (Dimensions == 3) {
+				Q_Z_(0, 0) = cos(theta_Z);
+				Q_Z_(1, 0) = -sin(theta_Z);
+				Q_Z_(2, 0) = 0.0;
+				Q_Z_(0, 1) = sin(theta_Z);
+				Q_Z_(1, 1) = cos(theta_Z);
+				Q_Z_(2, 1) = 0.0;
+				Q_Z_(0, 2) = 0.0;
+				Q_Z_(1, 2) = 0.0;
+				Q_Z_(2, 2) = 1.0;
+
+				Q_Y_(0, 0) = cos(theta_Y);
+				Q_Y_(1, 0) = 0.0;
+				Q_Y_(2, 0) = -sin(theta_Y);
+				Q_Y_(0, 1) = 0.0;
+				Q_Y_(1, 1) = 1.0;
+				Q_Y_(2, 1) = 0.0;
+				Q_Y_(0, 2) = sin(theta_Y);
+				Q_Y_(1, 2) = 0.0;
+				Q_Y_(2, 2) = cos(theta_Y);
+
+				Q_X_(0, 0) = 1.0;
+				Q_X_(1, 0) = 0.0;
+				Q_X_(2, 0) = 0.0;
+				Q_X_(0, 1) = 0.0;
+				Q_X_(1, 1) = cos(theta_X);
+				Q_X_(2, 1) = -sin(theta_X);
+				Q_X_(0, 2) = 0.0;
+				Q_X_(1, 2) = sin(theta_X);
+				Q_X_(2, 2) = cos(theta_X);
+
+				Q_ = Q_Z_ * Q_Y_ * Q_X_;
+			}
+		};
+		virtual ~BaseSPHBodyRotation() {};
+
+	};
 }
 #endif // BASE_LOCAL_DYNAMICS_H
