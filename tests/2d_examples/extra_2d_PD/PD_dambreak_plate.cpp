@@ -50,8 +50,8 @@ StdVec<Vecd> observation_location = {PlateP_lb};
 //----------------------------------------------------------------------
 Real rho0_f = 1000.0;						   /**< Reference density of fluid. */
 Real gravity_g = 9.81;				   /**< Value of gravity. */
-Real U_f = 1.0;							   /**< Characteristic velocity. */
-Real c_f = 20.0 * sqrt(Dam_H * gravity_g); /**< Reference sound speed. */
+Real U_f = 10.0;							   /**< Characteristic velocity. */
+Real c_f = U_f * sqrt(Dam_H * gravity_g); /**< Reference sound speed. */
 Real mu_f = 0.0;
 Real k_f = 0.0;
 //----------------------------------------------------------------------
@@ -186,8 +186,8 @@ int main()
 	//----------------------------------------------------------------------
 	//	Algorithms of fluid dynamics.
 	//----------------------------------------------------------------------
-	Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWall> pressure_relaxation(water_block_complex_relation);
-	Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWall> density_relaxation(water_block_complex_relation);
+	Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWallforPD> pressure_relaxation(water_block_complex_relation);
+	Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWallforPD> density_relaxation(water_block_complex_relation);
 	InteractionWithUpdate<fluid_dynamics::DensitySummationFreeSurfaceComplex> update_density_by_summation(water_block_complex_relation);
 	SimpleDynamics<TimeStepInitialization> initialize_a_fluid_step(water_block, makeShared<Gravity>(Vecd(0.0, -gravity_g)));
 	ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
@@ -198,7 +198,7 @@ int main()
 	SimpleDynamics<OffsetInitialPosition> plate_offset_position(plate, offset);
 	SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 	SimpleDynamics<NormalDirectionFromBodyShape> plate_normal_direction(plate);	
-	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluid> fluid_pressure_force_on_plate(plate_water_contact_relation);
+	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluidforPD> fluid_pressure_force_on_plate(plate_water_contact_relation);
 	solid_dynamics::AverageVelocityAndAcceleration average_velocity_and_acceleration(plate);
 	//----------------------------------------------------------------------
 	//	Algorithms of Elastic dynamics.
@@ -210,8 +210,8 @@ int main()
 	SimpleDynamics<solid_dynamics::NosbPDFirstStep> NosbPD_firstStep(plate);
 	InteractionWithUpdate<solid_dynamics::NosbPDSecondStep> NosbPD_secondStep(plate_inner_relation);
 	InteractionDynamics<solid_dynamics::NosbPDThirdStep> NosbPD_thirdStep(plate_inner_relation);
-	//SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(plate);
-	 SimpleDynamics<solid_dynamics::NosbPDFourthStepWithADR> NosbPD_fourthStepADR(plate);
+	SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(plate);
+	 //SimpleDynamics<solid_dynamics::NosbPDFourthStepWithADR> NosbPD_fourthStepADR(plate);
 	//hourglass displacement mode control by LittleWood method
 	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(plate_inner_relation, plate.sph_adaptation_->getKernel());
 	//Numerical Damping
@@ -290,11 +290,12 @@ int main()
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
 	int number_of_iterations = 0;
-	int screen_output_interval = 10;
+	int screen_output_interval = 100;
 	Real end_time = 3.0;
 	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					/**< Default acoustic time step sizes. */
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
+	Real dt_s_0 = plate_computing_time_step_size.parallel_exec();
 
 	Real cn1 = 0.0;
 	Real cn2 = 0.0;
@@ -334,25 +335,17 @@ int main()
 				average_velocity_and_acceleration.initialize_displacement_.parallel_exec();
 				while (dt_s_sum < dt)
 				{
-					dt_s = plate_computing_time_step_size.parallel_exec();
+					dt_s = dt_s_0;
 					if (dt - dt_s_sum < dt_s) dt_s = dt - dt_s_sum;
 
 					NosbPD_firstStep.parallel_exec(dt_s);					
 					NosbPD_secondStep.parallel_exec(dt_s);
+
 					hourglass_control.parallel_exec(dt_s);
 					numerical_damping.parallel_exec(dt_s);
-					NosbPD_thirdStep.parallel_exec(dt_s);
-					/*cn1 = SMAX(TinyReal, computing_cn1.parallel_exec(dt));
-					cn2 = computing_cn2.parallel_exec(dt);
-					if (cn2 > TinyReal) {
-						ADR_cn = 2.0 * sqrt(cn1 / cn2);
-					}
-					else {
-						ADR_cn = 0.0;
-					}
-					ADR_cn = 0.001 * ADR_cn;
-					NosbPD_fourthStepADR.getADRcn(ADR_cn);*/
-					NosbPD_fourthStepADR.parallel_exec(dt_s);
+
+					NosbPD_thirdStep.parallel_exec(dt_s);					
+					NosbPD_fourthStep.parallel_exec(dt_s);
 
 					plate_constraint.parallel_exec(dt_s);
 
@@ -368,11 +361,18 @@ int main()
 			if (number_of_iterations % screen_output_interval == 0)
 			{
 				std::cout << std::fixed << std::setprecision(9) << "	N=" << number_of_iterations << " Time: "
-					<< GlobalStaticVariables::physical_time_ << "	dt: "
-					<< dt << "\n";
+					<< GlobalStaticVariables::physical_time_
+					<< "	Dt = " << Dt
+					<< "	dt = " << dt
+					<< "	dt_s = " << dt_s
+					<< "	dt / dt_s = " << dt / dt_s << "\n";
+
 				log_file << std::fixed << std::setprecision(9) << "	N=" << number_of_iterations << " Time: "
-					<< GlobalStaticVariables::physical_time_ << "	dt: "
-					<< dt << "\n";
+					<< GlobalStaticVariables::physical_time_
+					<< "	Dt = " << Dt
+					<< "	dt = " << dt
+					<< "	dt_s = " << dt_s
+					<< "	dt / dt_s = " << dt / dt_s << "\n";
 			}
 			number_of_iterations++;
 

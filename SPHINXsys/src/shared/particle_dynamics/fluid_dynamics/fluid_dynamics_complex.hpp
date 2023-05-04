@@ -180,8 +180,11 @@ namespace SPH
 					Real face_wall_external_acceleration = (acc_prior_i - acc_ave_k[index_j]).dot(-e_ij);
 					//Real p_in_wall = this->p_[index_i] + this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
 					//Real p_in_wall = SMAX(this->p_[index_i], 0.0) + this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
-					Real p_in_wall = SMAX(this->p_[index_i], 0.1 * this->p_[index_i])
+					Real p_in_wall = SMAX(this->p_[index_i], -3.0 * this->p_[index_i])
 						+ this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
+
+					/*Real p_in_wall = fabs(this->p_[index_i])
+						+ this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);*/
 
 					acceleration -= (this->p_[index_i] + p_in_wall) * dW_ijV_j * e_ij;
 
@@ -298,8 +301,8 @@ namespace SPH
 					Vecd& e_ij = wall_neighborhood.e_ij_[n];
 					Real dW_ijV_j = wall_neighborhood.dW_ijV_j_[n];
 
-					//Vecd vel_in_wall = 2.0 * vel_ave_k[index_j] - this->vel_[index_i];
-					Vecd vel_in_wall = vel_ave_k[index_j];
+					Vecd vel_in_wall = 2.0 * vel_ave_k[index_j] - this->vel_[index_i];
+					//Vecd vel_in_wall = vel_ave_k[index_j];
 
 					density_change_rate += (this->vel_[index_i] - vel_in_wall).dot(e_ij) * dW_ijV_j;
 

@@ -10,13 +10,13 @@ using namespace SPH;   //	Namespace cite here.
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DL = 500.0;						/**< Tank length. */
-Real DH = 200.1;						/**< Tank height. */
-Real Dam_L = 100.0;						/**< Water block width. */
-Real Dam_H = 140.0;						/**< Water block height. */
-Real Gate_width = 5.0;					/**< Width of the gate. */
-Real Base_bottom_position = 79.0;		/**< Position of gate base. (In Y direction) */
-Real resolution_ref = Gate_width / 8.0; /**< Initial reference particle spacing. */
+Real DL = 0.5;						/**< Tank length. */
+Real DH = 0.2;						/**< Tank height. */
+Real Dam_L = 0.1;						/**< Water block width. */
+Real Dam_H = 0.14;						/**< Water block height. */
+Real Gate_width = 0.005;					/**< Width of the gate. */
+Real Base_bottom_position = 0.079;		/**< Position of gate base. (In Y direction) */
+Real resolution_ref = Gate_width / 5.0; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4.0;			/**< Extending width for BCs. */
 /** The offset that the rubber gate shifted above the tank. */
 Real dp_s = 0.5 * resolution_ref;
@@ -30,32 +30,33 @@ Vec2d DamP_rt(DL, Dam_H);		  /**< Right top. */
 Vec2d DamP_rb(DL, 0.0);			  /**< Right bottom. */
 /** Define the corner points of the gate geometry. */
 Vec2d GateP_lb(DL - Dam_L - Gate_width, 0.0);		 /**< Left bottom. */
-Vec2d GateP_lt(DL - Dam_L - Gate_width, Dam_H + BW); /**< Left top. */
-Vec2d GateP_rt(DL - Dam_L, Dam_H + BW);				 /**< Right top. */
+Vec2d GateP_lt(DL - Dam_L - Gate_width, DH); /**< Left top. */
+Vec2d GateP_rt(DL - Dam_L, DH);				 /**< Right top. */
 Vec2d GateP_rb(DL - Dam_L, 0.0);					 /**< Right bottom. */
 /** Define the corner points of the gate constrain. */
 Vec2d ConstrainP_lb(DL - Dam_L - Gate_width, Base_bottom_position); /**< Left bottom. */
-Vec2d ConstrainP_lt(DL - Dam_L - Gate_width, Dam_H + BW);			/**< Left top. */
-Vec2d ConstrainP_rt(DL - Dam_L, Dam_H + BW);						/**< Right top. */
+Vec2d ConstrainP_lt(DL - Dam_L - Gate_width, DH);			/**< Left top. */
+Vec2d ConstrainP_rt(DL - Dam_L, DH);						/**< Right top. */
 Vec2d ConstrainP_rb(DL - Dam_L, Base_bottom_position);				/**< Right bottom. */
 // observer location
 StdVec<Vecd> observation_location = {GateP_lb};
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
-Real rho0_f = 1.0;						   /**< Reference density of fluid. */
-Real gravity_g = 9.8e-3;				   /**< Value of gravity. */
-Real U_f = 1.0;							   /**< Characteristic velocity. */
-Real c_f = 20.0 * sqrt(140.0 * gravity_g); /**< Reference sound speed. */
+Real rho0_f = 1000.0;						   /**< Reference density of fluid. */
+Real gravity_g = 9.8;				   /**< Value of gravity. */
+Real U_f = 5.0;							   /**< Characteristic velocity. */
+Real c_f = U_f * sqrt(Dam_H * gravity_g); /**< Reference sound speed. */
 Real mu_f = 0.0;
 Real k_f = 0.0;
 //----------------------------------------------------------------------
 //	Material parameters of the elastic gate.
 //----------------------------------------------------------------------
-Real rho0_s = 60.0;	 /**< Reference density of gate. */
+Real rho0_s = 1100.0;	 /**< Reference density of gate. */
 Real poisson = 0.47; /**< Poisson ratio. */
 Real Ae = 7.8e3;	 /**< Normalized Youngs Modulus. */
-Real Youngs_modulus = Ae * rho0_f * U_f * U_f;
+//Real Youngs_modulus = Ae * rho0_f * U_f * U_f;
+ Real Youngs_modulus = 1e7;
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
@@ -158,6 +159,7 @@ int main()
 	size_t particle_num_w = wall_boundary.getBaseParticles().total_real_particles_;
 
 	PDBody gate(system, makeShared<MultiPolygonShape>(createGateShape(), "PDBody"));
+	//gate.defineAdaptationRatios(1.5075, 2.0);
 	gate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	gate.generateParticles<ParticleGeneratorLattice>();
 	size_t particle_num_s = gate.getBaseParticles().total_real_particles_;
@@ -285,11 +287,12 @@ int main()
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
 	int number_of_iterations = 0;
-	int screen_output_interval = 10;
-	Real end_time = 100.0;
+	int screen_output_interval = 100;
+	Real end_time = 1.0;
 	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					/**< Default acoustic time step sizes. */
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
+	Real dt_s_0 = gate_computing_time_step_size.parallel_exec();
 
 	Real cn1 = 0.0;
 	Real cn2 = 0.0;
@@ -329,7 +332,7 @@ int main()
 				average_velocity_and_acceleration.initialize_displacement_.parallel_exec();
 				while (dt_s_sum < dt)
 				{
-					dt_s = gate_computing_time_step_size.parallel_exec();
+					dt_s = dt_s_0;
 					if (dt - dt_s_sum < dt_s) dt_s = dt - dt_s_sum;
 
 					NosbPD_firstStep.parallel_exec(dt_s);					
@@ -362,9 +365,19 @@ int main()
 
 			if (number_of_iterations % screen_output_interval == 0)
 			{
-				std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-						  << GlobalStaticVariables::physical_time_
-						  << "	Dt = " << Dt << "	dt = " << dt << "	dt_s = " << dt_s << "\n";
+				std::cout << std::fixed << std::setprecision(9) << "	N=" << number_of_iterations << " Time: "
+					<< GlobalStaticVariables::physical_time_
+					<< "	Dt = " << Dt
+					<< "	dt = " << dt
+					<< "	dt_s = " << dt_s
+					<< "	dt / dt_s = " << dt / dt_s << "\n";
+
+				log_file << std::fixed << std::setprecision(9) << "	N=" << number_of_iterations << " Time: "
+					<< GlobalStaticVariables::physical_time_
+					<< "	Dt = " << Dt
+					<< "	dt = " << dt
+					<< "	dt_s = " << dt_s
+					<< "	dt / dt_s = " << dt / dt_s << "\n";
 			}
 			number_of_iterations++;
 
