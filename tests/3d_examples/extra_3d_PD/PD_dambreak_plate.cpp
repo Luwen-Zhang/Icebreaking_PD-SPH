@@ -250,6 +250,7 @@ int main(int ac, char *av[])
 	Real output_interval = end_time / 100.0;
 	Real dt = 0.0;					// default acoustic time step sizes
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
+	Real dt_s_0 = plate_computing_time_step_size.parallel_exec();
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
@@ -285,7 +286,7 @@ int main(int ac, char *av[])
 				average_velocity_and_acceleration.initialize_displacement_.parallel_exec();
 				while (dt_s_sum < dt)
 				{
-					dt_s = plate_computing_time_step_size.parallel_exec();
+					dt_s = dt_s_0;
 					if (dt - dt_s_sum < dt_s) dt_s = dt - dt_s_sum;
 
 					NosbPD_firstStep.parallel_exec(dt_s);
@@ -310,11 +311,18 @@ int main(int ac, char *av[])
 			if (number_of_iterations % screen_output_interval == 0)
 			{
 				std::cout << std::fixed << std::setprecision(9) << "	N=" << number_of_iterations << " Time: "
-					<< GlobalStaticVariables::physical_time_ << "	dt: "
-					<< dt << "\n";
+					<< GlobalStaticVariables::physical_time_
+					<< "	Dt = " << Dt
+					<< "	dt = " << dt
+					<< "	dt_s = " << dt_s
+					<< "	dt / dt_s = " << dt / dt_s << "\n";
+
 				log_file << std::fixed << std::setprecision(9) << "	N=" << number_of_iterations << " Time: "
-					<< GlobalStaticVariables::physical_time_ << "	dt: "
-					<< dt << "\n";
+					<< GlobalStaticVariables::physical_time_
+					<< "	Dt = " << Dt
+					<< "	dt = " << dt
+					<< "	dt_s = " << dt_s
+					<< "	dt / dt_s = " << dt / dt_s << "\n";
 			}
 			number_of_iterations++;
 
