@@ -292,7 +292,7 @@ int main()
 	//----------------------------------------------------------------------
 	int number_of_iterations = 0;
 	int screen_output_interval = 100;
-	Real end_time = 3.0;
+	Real end_time = 0.3;
 	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					/**< Default acoustic time step sizes. */
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
@@ -343,7 +343,7 @@ int main()
 					NosbPD_secondStep.parallel_exec(dt_s);
 
 					hourglass_control.parallel_exec(dt_s);
-					numerical_damping.parallel_exec(dt_s);
+					//numerical_damping.parallel_exec(dt_s);
 
 					NosbPD_thirdStep.parallel_exec(dt_s);					
 					NosbPD_fourthStep.parallel_exec(dt_s);

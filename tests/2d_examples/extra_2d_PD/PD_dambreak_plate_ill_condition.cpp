@@ -1,6 +1,6 @@
 /**
- * @file 	elastic_gate.cpp
- * @brief 	2D elastic gate deformation due to dam break force.
+ * @file 	elastic_plate.cpp
+ * @brief 	2D elastic plate deformation due to dam break force.
  * @details This is the one of the basic test cases, also the first case for
  * 			understanding SPH method for fluid-structure-interaction (FSI) simulation.
  * @author 	Luhui Han, Chi Zhang and Xiangyu Hu
@@ -10,53 +10,57 @@ using namespace SPH;   //	Namespace cite here.
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real DL = 0.5;						/**< Tank length. */
-Real DH = 0.2;						/**< Tank height. */
-Real Dam_L = 0.1;						/**< Water block width. */
-Real Dam_H = 0.14;						/**< Water block height. */
-Real Gate_width = 0.005;					/**< Width of the gate. */
-Real Base_bottom_position = 0.079;		/**< Position of gate base. (In Y direction) */
-Real resolution_ref = Gate_width / 5.0; /**< Initial reference particle spacing. */
+Real DL = 0.584; 									/**< Tank length. */
+Real DH = 0.365; 									/**< Tank height. */
+Real Dam_L = 0.146; 								/**< Dam width. */
+Real Dam_H = 1.0 * Dam_L; 								/**< Dam height. */
+Real Rubber_width = 0.012;							/**< Width of the rubber plate. */
+Real Rubber_height = 1.2 * Dam_H;			/**< Height of the rubber plate. */
+Real Base_bottom_position = 0.0;					/**< Position of plate base. (In Y direction) */
+Real resolution_ref = Rubber_width / 12.0; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4.0;			/**< Extending width for BCs. */
-/** The offset that the rubber gate shifted above the tank. */
+/** The offset that the rubber plate shifted above the tank. */
 Real dp_s = 0.5 * resolution_ref;
 Vec2d offset = Vec2d(0.0, Base_bottom_position - floor(Base_bottom_position / dp_s) * dp_s);
 /** Domain bounds of the system. */
 BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
-/** Define the corner points of the water block geometry. */
-Vec2d DamP_lb(DL - Dam_L, 0.0);	  /**< Left bottom. */
-Vec2d DamP_lt(DL - Dam_L, Dam_H); /**< Left top. */
-Vec2d DamP_rt(DL, Dam_H);		  /**< Right top. */
-Vec2d DamP_rb(DL, 0.0);			  /**< Right bottom. */
-/** Define the corner points of the gate geometry. */
-Vec2d GateP_lb(DL - Dam_L - Gate_width, 0.0);		 /**< Left bottom. */
-Vec2d GateP_lt(DL - Dam_L - Gate_width, DH); /**< Left top. */
-Vec2d GateP_rt(DL - Dam_L, DH);				 /**< Right top. */
-Vec2d GateP_rb(DL - Dam_L, 0.0);					 /**< Right bottom. */
-/** Define the corner points of the gate constrain. */
-Vec2d ConstrainP_lb(DL - Dam_L - Gate_width, Base_bottom_position); /**< Left bottom. */
-Vec2d ConstrainP_lt(DL - Dam_L - Gate_width, DH);			/**< Left top. */
-Vec2d ConstrainP_rt(DL - Dam_L, DH);						/**< Right top. */
-Vec2d ConstrainP_rb(DL - Dam_L, Base_bottom_position);				/**< Right bottom. */
+/**
+ * @brief 	Define the corner point of dam geomerty.
+ */
+Vec2d DamP_lb(0.0, 0.0); 		/**< Left bottom. */
+Vec2d DamP_lt(0.0, Dam_H); 		/**< Left top. */
+Vec2d DamP_rt(Dam_L, Dam_H); 				/**< Right top. */
+Vec2d DamP_rb(Dam_L, 0.0); 				/**< Right bottom. */
+/**
+ * @brief 	Define the corner point of plate geomerty.
+ */
+Vec2d PlateP_lb(1.0 * Dam_L, 0.0); 					/**< Left bottom. */
+Vec2d PlateP_lt(1.0 * Dam_L, Rubber_height); 	/**< Left top. */
+Vec2d PlateP_rt(1.0 * Dam_L + Rubber_width, Rubber_height); 					/**< Right top. */
+Vec2d PlateP_rb(1.0 * Dam_L + Rubber_width, 0.0); 									/**< Right bottom. */
+/** Define the corner points of the plate constrain. */
+Vec2d ConstrainP_lb(1.0 * Dam_L, 0.0);				 /**< Left bottom. */
+Vec2d ConstrainP_lt(1.0 * Dam_L, BW);				 /**< Left top. */
+Vec2d ConstrainP_rt(1.0 * Dam_L + Rubber_width, BW); /**< Right top. */
+Vec2d ConstrainP_rb(1.0 * Dam_L + Rubber_width, 0.0);/**< Right bottom. */
 // observer location
-StdVec<Vecd> observation_location = {GateP_lb};
+StdVec<Vecd> observation_location = {PlateP_lb};
 //----------------------------------------------------------------------
 //	Material properties of the fluid.
 //----------------------------------------------------------------------
 Real rho0_f = 1000.0;						   /**< Reference density of fluid. */
-Real gravity_g = 9.8;				   /**< Value of gravity. */
-Real U_f = 5.0;							   /**< Characteristic velocity. */
+Real gravity_g = 9.81;				   /**< Value of gravity. */
+Real U_f = 10.0;							   /**< Characteristic velocity. */
 Real c_f = U_f * sqrt(Dam_H * gravity_g); /**< Reference sound speed. */
 Real mu_f = 0.0;
 Real k_f = 0.0;
 //----------------------------------------------------------------------
-//	Material parameters of the elastic gate.
+//	Material parameters of the elastic plate.
 //----------------------------------------------------------------------
-Real rho0_s = 1100.0;	 /**< Reference density of gate. */
-Real poisson = 0.47; /**< Poisson ratio. */
+Real rho0_s = 2500.0;	 /**< Reference density of plate. */
+Real poisson = 0.0; /**< Poisson ratio. */
 Real Ae = 7.8e3;	 /**< Normalized Youngs Modulus. */
-//Real Youngs_modulus = Ae * rho0_f * U_f * U_f;
- Real Youngs_modulus = 1e7;
+Real Youngs_modulus = 1e10;
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
@@ -103,36 +107,36 @@ public:
 	}
 };
 //----------------------------------------------------------------------
-//	create a gate shape
+//	create a plate shape
 //----------------------------------------------------------------------
-MultiPolygon createGateShape()
+MultiPolygon createPlateShape()
 {
-	std::vector<Vecd> gate_shape;
-	gate_shape.push_back(GateP_lb);
-	gate_shape.push_back(GateP_lt);
-	gate_shape.push_back(GateP_rt);
-	gate_shape.push_back(GateP_rb);
-	gate_shape.push_back(GateP_lb);
+	std::vector<Vecd> plate_shape;
+	plate_shape.push_back(PlateP_lb);
+	plate_shape.push_back(PlateP_lt);
+	plate_shape.push_back(PlateP_rt);
+	plate_shape.push_back(PlateP_rb);
+	plate_shape.push_back(PlateP_lb);
 
 	MultiPolygon multi_polygon;
-	multi_polygon.addAPolygon(gate_shape, ShapeBooleanOps::add);
+	multi_polygon.addAPolygon(plate_shape, ShapeBooleanOps::add);
 	return multi_polygon;
 }
 //----------------------------------------------------------------------
-// Create the gate constrain shape
+// Create the plate constrain shape
 //----------------------------------------------------------------------
-MultiPolygon createGateConstrainShape()
+MultiPolygon createPlateConstrainShape()
 {
 	// geometry
-	std::vector<Vecd> gate_constraint_shape;
-	gate_constraint_shape.push_back(ConstrainP_lb);
-	gate_constraint_shape.push_back(ConstrainP_lt);
-	gate_constraint_shape.push_back(ConstrainP_rt);
-	gate_constraint_shape.push_back(ConstrainP_rb);
-	gate_constraint_shape.push_back(ConstrainP_lb);
+	std::vector<Vecd> plate_constraint_shape;
+	plate_constraint_shape.push_back(ConstrainP_lb);
+	plate_constraint_shape.push_back(ConstrainP_lt);
+	plate_constraint_shape.push_back(ConstrainP_rt);
+	plate_constraint_shape.push_back(ConstrainP_rb);
+	plate_constraint_shape.push_back(ConstrainP_lb);
 
 	MultiPolygon multi_polygon;
-	multi_polygon.addAPolygon(gate_constraint_shape, ShapeBooleanOps::add);
+	multi_polygon.addAPolygon(plate_constraint_shape, ShapeBooleanOps::add);
 	return multi_polygon;
 }
 //----------------------------------------------------------------------
@@ -158,24 +162,24 @@ int main()
 	wall_boundary.generateParticles<ParticleGeneratorLattice>();
 	size_t particle_num_w = wall_boundary.getBaseParticles().total_real_particles_;
 
-	PDBody gate(system, makeShared<MultiPolygonShape>(createGateShape(), "PDBody"));
-	gate.defineAdaptationRatios(1.5075, 2.0);
-	gate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
-	gate.generateParticles<ParticleGeneratorLattice>();
-	size_t particle_num_s = gate.getBaseParticles().total_real_particles_;
+	PDBody plate(system, makeShared<MultiPolygonShape>(createPlateShape(), "PDBody"));
+	//plate.defineAdaptationRatios(1.5075, 2.0);
+	plate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
+	plate.generateParticles<ParticleGeneratorLattice>();
+	size_t particle_num_s = plate.getBaseParticles().total_real_particles_;
 
 	size_t particle_num = particle_num_f + particle_num_w + particle_num_s;
-	ObserverBody gate_observer(system, "Observer");
-	gate_observer.generateParticles<ObserverParticleGenerator>(observation_location);
+	ObserverBody plate_observer(system, "Observer");
+	plate_observer.generateParticles<ObserverParticleGenerator>(observation_location);
 	//----------------------------------------------------------------------
 	//	Define body relation map.
 	//	The contact map gives the topological connections between the bodies.
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
-	ComplexRelation water_block_complex_relation(water_block, RealBodyVector{&wall_boundary, &gate});
-	InnerRelation gate_inner_relation(gate);
-	ContactRelation gate_water_contact_relation(gate, {&water_block});
-	ContactRelation gate_observer_contact_relation(gate_observer, {&gate});
+	ComplexRelation water_block_complex_relation(water_block, RealBodyVector{&wall_boundary, &plate});
+	InnerRelation plate_inner_relation(plate);
+	ContactRelation plate_water_contact_relation(plate, {&water_block});
+	ContactRelation plate_observer_contact_relation(plate_observer, {&plate});
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
@@ -192,42 +196,42 @@ int main()
 	//----------------------------------------------------------------------
 	//	Algorithms of FSI.
 	//----------------------------------------------------------------------
-	SimpleDynamics<OffsetInitialPosition> gate_offset_position(gate, offset);
+	SimpleDynamics<OffsetInitialPosition> plate_offset_position(plate, offset);
 	SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
-	SimpleDynamics<NormalDirectionFromBodyShape> gate_normal_direction(gate);	
-	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluid> fluid_pressure_force_on_gate(gate_water_contact_relation);
-	solid_dynamics::AverageVelocityAndAcceleration average_velocity_and_acceleration(gate);
+	SimpleDynamics<NormalDirectionFromBodyShape> plate_normal_direction(plate);	
+	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluid> fluid_pressure_force_on_plate(plate_water_contact_relation);
+	solid_dynamics::AverageVelocityAndAcceleration average_velocity_and_acceleration(plate);
 	//----------------------------------------------------------------------
 	//	Algorithms of Elastic dynamics.
 	//----------------------------------------------------------------------
-	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> gate_computing_time_step_size(gate, 0.24);
+	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> plate_computing_time_step_size(plate, 0.24);
 	/** calculate shape Matrix */
-	InteractionWithUpdate<solid_dynamics::NosbPDShapeMatrix> gate_shapeMatrix(gate_inner_relation);
+	InteractionWithUpdate<solid_dynamics::NosbPDShapeMatrix> plate_shapeMatrix(plate_inner_relation);
 	//stress relaxation for the beam by Hughes-Winget algorithm
-	SimpleDynamics<solid_dynamics::NosbPDFirstStep> NosbPD_firstStep(gate);
-	InteractionWithUpdate<solid_dynamics::NosbPDSecondStep> NosbPD_secondStep(gate_inner_relation);
-	InteractionDynamics<solid_dynamics::NosbPDThirdStep> NosbPD_thirdStep(gate_inner_relation);
-	//SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(gate);
-	 SimpleDynamics<solid_dynamics::NosbPDFourthStepWithADR> NosbPD_fourthStepADR(gate);
+	SimpleDynamics<solid_dynamics::NosbPDFirstStep> NosbPD_firstStep(plate);
+	InteractionWithUpdate<solid_dynamics::NosbPDSecondStep> NosbPD_secondStep(plate_inner_relation);
+	InteractionDynamics<solid_dynamics::NosbPDThirdStep> NosbPD_thirdStep(plate_inner_relation);
+	SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(plate);
+	 //SimpleDynamics<solid_dynamics::NosbPDFourthStepWithADR> NosbPD_fourthStepADR(plate);
 	//hourglass displacement mode control by LittleWood method
-	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(gate_inner_relation, gate.sph_adaptation_->getKernel());
+	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(plate_inner_relation, plate.sph_adaptation_->getKernel());
 	//Numerical Damping
-	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD> numerical_damping(gate_inner_relation, gate.sph_adaptation_->getKernel());
+	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD> numerical_damping(plate_inner_relation, plate.sph_adaptation_->getKernel());
 	
 	// ADR_cn calculation
-	ReduceDynamics<solid_dynamics::ADRFirstStep> computing_cn1(gate);
-	ReduceDynamics<solid_dynamics::ADRSecondStep> computing_cn2(gate);	
+	ReduceDynamics<solid_dynamics::ADRFirstStep> computing_cn1(plate);
+	ReduceDynamics<solid_dynamics::ADRSecondStep> computing_cn2(plate);	
 
-	BodyRegionByParticle gate_constraint_part(gate, makeShared<MultiPolygonShape>(createGateConstrainShape()));
-	SimpleDynamics<solid_dynamics::FixBodyPartConstraint> gate_constraint(gate_constraint_part);
-	SimpleDynamics<solid_dynamics::UpdateElasticNormalDirection> gate_update_normal(gate);
+	BodyRegionByParticle plate_constraint_part(plate, makeShared<MultiPolygonShape>(createPlateConstrainShape()));
+	SimpleDynamics<solid_dynamics::FixBodyPartConstraint> plate_constraint(plate_constraint_part);
+	SimpleDynamics<solid_dynamics::UpdateElasticNormalDirection> plate_update_normal(plate);
 	//----------------------------------------------------------------------
 	//	Define the methods for I/O operations and observations of the simulation.
 	//----------------------------------------------------------------------
 	BodyStatesRecordingToPlt write_real_body_states_to_plt(io_environment, system.real_bodies_);
 	BodyStatesRecordingToVtp write_real_body_states_to_vtp(io_environment, system.real_bodies_);
 	RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>>
-		write_beam_tip_displacement("Position", io_environment, gate_observer_contact_relation);
+		write_beam_tip_displacement("Position", io_environment, plate_observer_contact_relation);
 	//TODO: observing position is not as good observing displacement. 
     //Log file
 	std::string Logpath = io_environment.output_folder_ + "/SimLog.txt";
@@ -277,12 +281,12 @@ int main()
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	gate_offset_position.parallel_exec();
+	plate_offset_position.parallel_exec();
 	system.initializeSystemCellLinkedLists();
 	system.initializeSystemConfigurations();
 	wall_boundary_normal_direction.parallel_exec();
-	gate_normal_direction.parallel_exec();
-	gate_shapeMatrix.parallel_exec();
+	plate_normal_direction.parallel_exec();
+	plate_shapeMatrix.parallel_exec();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
@@ -292,7 +296,7 @@ int main()
 	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					/**< Default acoustic time step sizes. */
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
-	Real dt_s_0 = gate_computing_time_step_size.parallel_exec();
+	Real dt_s_0 = plate_computing_time_step_size.parallel_exec();
 
 	Real cn1 = 0.0;
 	Real cn2 = 0.0;
@@ -319,13 +323,13 @@ int main()
 			Real Dt = get_fluid_advection_time_step_size.parallel_exec();
 			update_density_by_summation.parallel_exec();
 			/** Update normal direction at elastic body surface. */
-			gate_update_normal.parallel_exec();
+			plate_update_normal.parallel_exec();
 			Real relaxation_time = 0.0;
 			while (relaxation_time < Dt)
 			{
 				/** Fluid relaxation and force computation. */
 				pressure_relaxation.parallel_exec(dt);
-				fluid_pressure_force_on_gate.parallel_exec();
+				fluid_pressure_force_on_plate.parallel_exec();
 				density_relaxation.parallel_exec(dt);
 				/** Solid dynamics time stepping. */
 				Real dt_s_sum = 0.0;
@@ -337,22 +341,14 @@ int main()
 
 					NosbPD_firstStep.parallel_exec(dt_s);					
 					NosbPD_secondStep.parallel_exec(dt_s);
+
 					hourglass_control.parallel_exec(dt_s);
 					numerical_damping.parallel_exec(dt_s);
-					NosbPD_thirdStep.parallel_exec(dt_s);
-					/*cn1 = SMAX(TinyReal, computing_cn1.parallel_exec(dt));
-					cn2 = computing_cn2.parallel_exec(dt);
-					if (cn2 > TinyReal) {
-						ADR_cn = 2.0 * sqrt(cn1 / cn2);
-					}
-					else {
-						ADR_cn = 0.0;
-					}
-					ADR_cn = 0.001 * ADR_cn;
-					NosbPD_fourthStepADR.getADRcn(ADR_cn);*/
-					NosbPD_fourthStepADR.parallel_exec(dt_s);
 
-					gate_constraint.parallel_exec(dt_s);
+					NosbPD_thirdStep.parallel_exec(dt_s);					
+					NosbPD_fourthStep.parallel_exec(dt_s);
+
+					plate_constraint.parallel_exec(dt_s);
 
 					dt_s_sum += dt_s;
 				}
@@ -383,9 +379,9 @@ int main()
 
 			/** Update cell linked list and configuration. */
 			water_block.updateCellLinkedListWithParticleSort(100);
-			gate.updateCellLinkedList();
+			plate.updateCellLinkedList();
 			water_block_complex_relation.updateConfiguration();
-			gate_water_contact_relation.updateConfiguration();
+			plate_water_contact_relation.updateConfiguration();
 			/** Output the observed data. */
 			write_beam_tip_displacement.writeToFile(number_of_iterations);
 		}
