@@ -48,6 +48,7 @@ namespace SPH
 	{
 	public:
 		StdLargeVec<Real> p_;				 /**< pressure */
+		StdLargeVec<Real> u_div_;				 /**< velocity divergence */
 		StdLargeVec<Real> drho_dt_;			 /**< density change rate */
 		StdLargeVec<Real> rho_sum_;			 /**< number density */
 		StdLargeVec<int> surface_indicator_; /**< free surface indicator */

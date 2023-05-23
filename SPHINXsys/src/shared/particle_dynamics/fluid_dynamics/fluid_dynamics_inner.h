@@ -275,7 +275,7 @@ namespace SPH
 
 		protected:
 			Fluid &fluid_;
-			StdLargeVec<Real> &rho_, &p_, &drho_dt_;
+			StdLargeVec<Real> &rho_, &p_, &drho_dt_, &u_div_;
 			StdLargeVec<Vecd> &pos_, &vel_, &acc_, &acc_prior_;
 		};
 
@@ -291,6 +291,7 @@ namespace SPH
 			explicit BaseIntegration1stHalf(BaseInnerRelation &inner_relation);
 			virtual ~BaseIntegration1stHalf(){};
 			RiemannSolverType riemann_solver_;
+			Real coeff_acoustic_damper_;
 			void initialization(size_t index_i, Real dt = 0.0);
 			void interaction(size_t index_i, Real dt = 0.0);
 			void update(size_t index_i, Real dt = 0.0);

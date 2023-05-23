@@ -14,7 +14,7 @@ Real DL = 5.366;					/**< Water tank length. */
 Real DH = 5.366;					/**< Water tank height. */
 Real LL = 2.0;						/**< Water column length. */
 Real LH = 1.0;						/**< Water column height. */
-Real particle_spacing_ref = 0.025 / 4;	/**< Initial reference particle spacing. */
+Real particle_spacing_ref = 0.025 / 2;	/**< Initial reference particle spacing. */
 Real BW = particle_spacing_ref * 4; /**< Thickness of tank wall. */
 //----------------------------------------------------------------------
 //	Material parameters.
@@ -23,6 +23,7 @@ Real rho0_f = 1.0;						 /**< Reference density of fluid. */
 Real gravity_g = 1.0;					 /**< Gravity. */
 Real U_max = 2.0 * sqrt(gravity_g * LH); /**< Characteristic velocity. */
 Real c_f = 10.0 * U_max;				 /**< Reference sound speed. */
+//Real c_f = 100;				 /**< Reference sound speed. */
 //----------------------------------------------------------------------
 //	Geometric shapes used in this case.
 //----------------------------------------------------------------------
@@ -86,6 +87,8 @@ int main(int ac, char *av[])
 	//	Note that there may be data dependence on the sequence of constructions.
 	//----------------------------------------------------------------------
 	Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWall> fluid_pressure_relaxation(water_block_complex);
+	Real h = water_block.sph_adaptation_->getKernel()->CutOffRadius();
+	fluid_pressure_relaxation.setcoeffacousticdamper(rho0_f, c_f, h);
 	Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWall> fluid_density_relaxation(water_block_complex);
 	InteractionWithUpdate<fluid_dynamics::DensitySummationFreeSurfaceComplex> fluid_density_by_summation(water_block_complex);
 	SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
@@ -127,8 +130,8 @@ int main(int ac, char *av[])
 	int screen_output_interval = 100;
 	int observation_sample_interval = screen_output_interval * 2;
 	int restart_output_interval = screen_output_interval * 10;
-	Real end_time = 20.0;
-	Real output_interval = 0.1;
+	Real end_time = 10.0;
+	Real output_interval = end_time / 200;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------

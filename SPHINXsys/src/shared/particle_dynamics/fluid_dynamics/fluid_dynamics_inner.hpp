@@ -39,7 +39,12 @@ namespace SPH
 		//=================================================================================================//
 		template <class RiemannSolverType>
 		BaseIntegration1stHalf<RiemannSolverType>::BaseIntegration1stHalf(BaseInnerRelation &inner_relation)
-			: BaseIntegration(inner_relation), riemann_solver_(fluid_, fluid_) {}
+			: BaseIntegration(inner_relation), riemann_solver_(fluid_, fluid_) {
+
+			Real h = inner_relation.getSPHBody().sph_adaptation_->getKernel()->CutOffRadius();
+			coeff_acoustic_damper_ = 0.3 * fluid_.ReferenceSoundSpeed() * fluid_.ReferenceDensity() * h;
+
+		}
 		//=================================================================================================//
 		template <class RiemannSolverType>
 		void BaseIntegration1stHalf<RiemannSolverType>::initialization(size_t index_i, Real dt)
@@ -75,6 +80,7 @@ namespace SPH
 		void BaseIntegration1stHalf<RiemannSolverType>::interaction(size_t index_i, Real dt)
 		{
 			Vecd acceleration =  Vecd::Zero();
+			Vecd acoustic_damper =  Vecd::Zero();
 			Real rho_dissipation(0);
 			const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
 			for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
@@ -84,9 +90,10 @@ namespace SPH
 				const Vecd &e_ij = inner_neighborhood.e_ij_[n];
 
 				acceleration -= (p_[index_i] + p_[index_j]) * dW_ijV_j * e_ij;
+				acoustic_damper += (u_div_[index_i] + u_div_[index_j]) * dW_ijV_j * e_ij;
 				rho_dissipation += riemann_solver_.DissipativeUJump(p_[index_i] - p_[index_j]) * dW_ijV_j;
 			}
-			acc_[index_i] += acceleration / rho_[index_i];
+			acc_[index_i] += acceleration / rho_[index_i] + coeff_acoustic_damper_ * acoustic_damper / rho_[index_i];
 			drho_dt_[index_i] = rho_dissipation * rho_[index_i];
 		}
 		//=================================================================================================//
@@ -125,6 +132,7 @@ namespace SPH
 				p_dissipation += riemann_solver_.DissipativePJump(u_jump) * dW_ijV_j * e_ij;
 			}
 			drho_dt_[index_i] += density_change_rate * rho_[index_i];
+			u_div_[index_i] = -density_change_rate;
 			acc_[index_i] = p_dissipation / rho_[index_i];
 		};
 		//=================================================================================================//

@@ -57,15 +57,16 @@ namespace SPH
 			InteractionWithWall(BaseContactRelation &wall_contact_relation,
 								BaseBodyRelationType &base_body_relation, Args &&...args);
 			template <typename... Args>
-			InteractionWithWall(ComplexRelation &fluid_wall_relation, Args &&...args)
+			InteractionWithWall(ComplexRelation& fluid_wall_relation, Args &&...args)
 				: InteractionWithWall(fluid_wall_relation.getContactRelation(),
-									  fluid_wall_relation.getInnerRelation(), std::forward<Args>(args)...) {}
+					fluid_wall_relation.getInnerRelation(), std::forward<Args>(args)...) {};
 			virtual ~InteractionWithWall(){};
+			
 
-		protected:
+		protected:			
 			StdVec<Real> wall_inv_rho0_;
 			StdVec<StdLargeVec<Real> *> wall_mass_;
-			StdVec<StdLargeVec<Vecd> *> wall_vel_ave_, wall_acc_ave_, wall_n_;
+			StdVec<StdLargeVec<Vecd> *> wall_vel_ave_, wall_acc_ave_, wall_n_;			
 		};
 
 		/**
@@ -177,9 +178,18 @@ namespace SPH
 		public:
 			template <typename... Args>
 			BaseIntegration1stHalfWithWall(Args &&...args)
-				: InteractionWithWall<BaseIntegration1stHalfType>(std::forward<Args>(args)...){};
+				: InteractionWithWall<BaseIntegration1stHalfType>(std::forward<Args>(args)...){
+				coeff_acoustic_damper_ = 0.0;
+			};
 			virtual ~BaseIntegration1stHalfWithWall(){};
 			void interaction(size_t index_i, Real dt = 0.0);
+
+			void setcoeffacousticdamper(Real& rho0, Real& c0, Real& h)
+			{
+				coeff_acoustic_damper_ = 0.3 * c0 * rho0 * h;
+			};
+
+			Real coeff_acoustic_damper_;
 
 		protected:
 			virtual Vecd computeNonConservativeAcceleration(size_t index_i) override;
@@ -203,6 +213,8 @@ namespace SPH
 				: InteractionWithWall<BaseIntegration1stHalfType>(std::forward<Args>(args)...) {};
 			virtual ~BaseIntegration1stHalfWithWallforPD() {};
 			void interaction(size_t index_i, Real dt = 0.0);
+
+			
 
 		protected:
 			virtual Vecd computeNonConservativeAcceleration(size_t index_i) override;

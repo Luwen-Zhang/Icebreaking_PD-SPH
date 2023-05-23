@@ -16,6 +16,7 @@ namespace SPH
 		BaseParticles::initializeOtherVariables();
 
 		registerVariable(p_, "Pressure");
+		registerVariable(u_div_, "Veldivergence");
 		registerVariable(drho_dt_, "DensityChangeRate");
 		registerVariable(rho_sum_, "DensitySummation");
 		registerVariable(surface_indicator_, "SurfaceIndicator");

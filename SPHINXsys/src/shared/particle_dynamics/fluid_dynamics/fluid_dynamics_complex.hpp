@@ -45,6 +45,7 @@ namespace SPH
 			: BaseIntegrationType(base_body_relation, std::forward<Args>(args)...),
 			  FluidWallData(wall_contact_relation)
 		{
+			//fluid_ = particles_->fluid_;
 			if (&base_body_relation.getSPHBody() != &wall_contact_relation.getSPHBody())
 			{
 				std::cout << "\n Error: the two body_relations do not have the same source body!" << std::endl;
@@ -129,6 +130,7 @@ namespace SPH
 			Vecd acc_prior_i = computeNonConservativeAcceleration(index_i);
 
 			Vecd acceleration = Vecd::Zero();
+			Vecd acoustic_damper = Vecd::Zero();
 			Real rho_dissipation(0);
 			for (size_t k = 0; k < FluidWallData::contact_configuration_.size(); ++k)
 			{
@@ -144,10 +146,12 @@ namespace SPH
 					Real face_wall_external_acceleration = (acc_prior_i - acc_ave_k[index_j]).dot(-e_ij);
 					Real p_in_wall = this->p_[index_i] + this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
 					acceleration -= (this->p_[index_i] + p_in_wall) * dW_ijV_j * e_ij;
+					acoustic_damper += (this->u_div_[index_i] * 2) * dW_ijV_j * e_ij;
 					rho_dissipation += this->riemann_solver_.DissipativeUJump(this->p_[index_i] - p_in_wall) * dW_ijV_j;
 				}
 			}
-			this->acc_[index_i] += acceleration / this->rho_[index_i];
+			//this->acc_[index_i] += acceleration / this->rho_[index_i];
+			this->acc_[index_i] += acceleration / this->rho_[index_i] + coeff_acoustic_damper_ * acoustic_damper / this->rho_[index_i];
 			this->drho_dt_[index_i] += rho_dissipation * this->rho_[index_i];
 		}
 		//=================================================================================================//
@@ -280,6 +284,7 @@ namespace SPH
 				}
 			}
 			this->drho_dt_[index_i] += density_change_rate * this->rho_[index_i];
+			this->u_div_[index_i] += -density_change_rate;
 			this->acc_[index_i] += p_dissipation / this->rho_[index_i];
 		}
 		//=================================================================================================//
