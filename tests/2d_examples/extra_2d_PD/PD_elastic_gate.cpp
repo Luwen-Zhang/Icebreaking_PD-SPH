@@ -45,7 +45,7 @@ StdVec<Vecd> observation_location = {GateP_lb};
 //----------------------------------------------------------------------
 Real rho0_f = 1000.0;						   /**< Reference density of fluid. */
 Real gravity_g = 9.8;				   /**< Value of gravity. */
-Real U_f = 5.0;							   /**< Characteristic velocity. */
+Real U_f = 20.0;							   /**< Characteristic velocity. */
 Real c_f = U_f * sqrt(Dam_H * gravity_g); /**< Reference sound speed. */
 Real mu_f = 0.0;
 Real k_f = 0.0;
@@ -159,7 +159,7 @@ int main()
 	size_t particle_num_w = wall_boundary.getBaseParticles().total_real_particles_;
 
 	PDBody gate(system, makeShared<MultiPolygonShape>(createGateShape(), "PDBody"));
-	gate.defineAdaptationRatios(1.5075, 2.0);
+	//gate.defineAdaptationRatios(1.5075, 2.0);
 	gate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	gate.generateParticles<ParticleGeneratorLattice>();
 	size_t particle_num_s = gate.getBaseParticles().total_real_particles_;
@@ -184,6 +184,8 @@ int main()
 	//	Algorithms of fluid dynamics.
 	//----------------------------------------------------------------------
 	Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWall> pressure_relaxation(water_block_complex_relation);
+	Real h = water_block.sph_adaptation_->getKernel()->CutOffRadius();
+	pressure_relaxation.setcoeffacousticdamper(rho0_f, c_f, h);
 	Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWall> density_relaxation(water_block_complex_relation);
 	InteractionWithUpdate<fluid_dynamics::DensitySummationFreeSurfaceComplex> update_density_by_summation(water_block_complex_relation);
 	SimpleDynamics<TimeStepInitialization> initialize_a_fluid_step(water_block, makeShared<Gravity>(Vecd(0.0, -gravity_g)));
@@ -195,7 +197,8 @@ int main()
 	SimpleDynamics<OffsetInitialPosition> gate_offset_position(gate, offset);
 	SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 	SimpleDynamics<NormalDirectionFromBodyShape> gate_normal_direction(gate);	
-	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluid> fluid_pressure_force_on_gate(gate_water_contact_relation);
+	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluidforPD> fluid_pressure_force_on_gate(gate_water_contact_relation);
+	fluid_pressure_force_on_gate.setcoeffacousticdamper(rho0_f, c_f, h);
 	solid_dynamics::AverageVelocityAndAcceleration average_velocity_and_acceleration(gate);
 	//----------------------------------------------------------------------
 	//	Algorithms of Elastic dynamics.

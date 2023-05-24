@@ -274,17 +274,27 @@ namespace SPH
 				: BasePressureForceAccelerationFromFluidforPD(true, contact_relation)
 			{
 				particles_->registerVariable(force_from_fluid_, "PressureForceFromFluid");
-				particles_->addVariableToWrite<Vecd>("PressureForceFromFluid");
+				particles_->addVariableToWrite<Vecd>("PressureForceFromFluid");		
+				coeff_acoustic_damper_ = 0.0;
 			};
 			virtual ~BasePressureForceAccelerationFromFluidforPD() {};
+
+			void setcoeffacousticdamper(Real& rho0, Real& c0, Real& h)
+			{
+				coeff_acoustic_damper_ = 0.3 * c0 * rho0 * h;
+			};
+
+			Real coeff_acoustic_damper_;
 
 			void interaction(size_t index_i, Real dt = 0.0)
 			{
 				Vecd force = Vecd::Zero();
+				Vecd acoustic_damper = Vecd::Zero();
 				for (size_t k = 0; k < contact_configuration_.size(); ++k)
 				{
 					StdLargeVec<Real>& rho_n_k = *(contact_rho_n_[k]);
 					StdLargeVec<Real>& p_k = *(contact_p_[k]);
+					StdLargeVec<Real>& u_div_k = *(contact_u_div_[k]);
 					StdLargeVec<Vecd>& vel_k = *(contact_vel_n_[k]);
 					StdLargeVec<Vecd>& acc_prior_k = *(contact_acc_prior_[k]);
 					RiemannSolverType& riemann_solvers_k = riemann_solvers_[k];
@@ -295,29 +305,27 @@ namespace SPH
 						Vecd e_ij = contact_neighborhood.e_ij_[n];
 						Real r_ij = contact_neighborhood.r_ij_[n];
 						Real face_wall_external_acceleration = (acc_prior_k[index_j] - acc_ave_[index_i]).dot(e_ij);
-						//Real p_in_wall = p_k[index_j] + rho_n_k[index_j] * r_ij * SMAX(0.0, face_wall_external_acceleration);
+						Real p_in_wall = p_k[index_j] + rho_n_k[index_j] * r_ij * SMAX(0.0, face_wall_external_acceleration);
 						//Real p_in_wall = SMAX(p_k[index_j], 0.0) + rho_n_k[index_j] * r_ij * SMAX(0.0, face_wall_external_acceleration);
-						Real p_in_wall = SMAX(p_k[index_j], -3.0 * p_k[index_j])
-							+ rho_n_k[index_j] * r_ij * SMAX(0.0, face_wall_external_acceleration);
+						//Real p_in_wall = SMAX(p_k[index_j], -3.0 * p_k[index_j])
+							//+ rho_n_k[index_j] * r_ij * SMAX(0.0, face_wall_external_acceleration);
 
 						/*Real p_in_wall = fabs(p_k[index_j])
 							+ rho_n_k[index_j] * r_ij * SMAX(0.0, face_wall_external_acceleration);*/
-
+						acoustic_damper += (u_div_k[index_j] * 2) * Vol_[index_i] * contact_neighborhood.dW_ijV_j_[n] * e_ij;
 						Real u_jump = 2.0 * (vel_k[index_j] - vel_ave_[index_i]).dot(n_[index_i]);
 
-						force += (riemann_solvers_k.DissipativePJump(u_jump) - (p_in_wall + p_k[index_j])) *
-							e_ij * Vol_[index_i] * contact_neighborhood.dW_ijV_j_[n];
-						/*force += (- (p_in_wall + p_k[index_j])) *
-							e_ij * Vol_[index_i] * contact_neighborhood.dW_ijV_j_[n];*/
+						force += (riemann_solvers_k.DissipativePJump(u_jump) * n_[index_i] - (p_in_wall + p_k[index_j]) * e_ij) *
+							Vol_[index_i] * contact_neighborhood.dW_ijV_j_[n];
 					}
 				}
-				force_from_fluid_[index_i] = force;
-				acc_prior_[index_i] = force / particles_->ParticleMass(index_i); // TODO: to add gravity contribution
+				force_from_fluid_[index_i] = force + coeff_acoustic_damper_ * acoustic_damper;
+				acc_prior_[index_i] = force_from_fluid_[index_i] / particles_->ParticleMass(index_i); // TODO: to add gravity contribution
 			};
 
 		protected:
 			StdLargeVec<Vecd>& vel_ave_, & acc_prior_, & acc_ave_, & n_;
-			StdVec<StdLargeVec<Real>*> contact_rho_n_, contact_p_;
+			StdVec<StdLargeVec<Real>*> contact_rho_n_, contact_p_, contact_u_div_;
 			StdVec<StdLargeVec<Vecd>*> contact_vel_n_, contact_acc_prior_;
 			StdVec<RiemannSolverType> riemann_solvers_;
 
@@ -332,6 +340,7 @@ namespace SPH
 					contact_rho_n_.push_back(&(contact_particles_[k]->rho_));
 					contact_vel_n_.push_back(&(contact_particles_[k]->vel_));
 					contact_p_.push_back(&(contact_particles_[k]->p_));
+					contact_u_div_.push_back(&(contact_particles_[k]->u_div_));
 					contact_acc_prior_.push_back(&(contact_particles_[k]->acc_prior_));
 					riemann_solvers_.push_back(RiemannSolverType(*contact_fluids_[k], *contact_fluids_[k]));
 				}
