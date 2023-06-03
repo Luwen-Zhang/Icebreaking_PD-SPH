@@ -24,10 +24,10 @@ BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(ID + BW, RL + IT + JH + 
 /**
  * @brief 	Define the corner point of Jet geomerty.
  */
-Vec2d JetP_lb(ID / 2 - JR, RL + IT + BW); 		/**< Left bottom. */
-Vec2d JetP_lt(ID / 2 - JR, RL + IT + JH + BW); 		/**< Left top. */
-Vec2d JetP_rt(ID / 2 + JR, RL + IT + JH + BW); 				/**< Right top. */
-Vec2d JetP_rb(ID / 2 + JR, RL + IT + BW); 				/**< Right bottom. */
+Vec2d JetP_lb(ID / 2 - JR - Eps, RL + IT + BW); 		/**< Left bottom. */
+Vec2d JetP_lt(ID / 2 - JR - Eps, RL + IT + JH + BW); 		/**< Left top. */
+Vec2d JetP_rt(ID / 2 + JR - Eps, RL + IT + JH + BW); 				/**< Right top. */
+Vec2d JetP_rb(ID / 2 + JR - Eps, RL + IT + BW); 				/**< Right bottom. */
 /**
  * @brief 	Define the corner point of Ice plate geomerty.
  */
@@ -257,6 +257,7 @@ int main()
 		<< "# COMPUTATION START # " << "\n" << "\n";
 	log_file << "#PARAM SETING#" << "\n" << "\n"
 		<< "	particle_num = " << particle_num << "\n" << "\n"
+		<< "	particle_spacing_ref = " << resolution_ref << "\n" << "\n"
 		<< "<---- Fluid Domain ---->" << "\n" << "\n"		
 		<< "	particle_num_w = " << particle_num_w << "\n"
 		<< "	particle_num_f = " << particle_num_f << "\n" << "\n"
@@ -344,7 +345,7 @@ int main()
 					dt_s = dt_s_0;
 					if (dt - dt_s_sum < dt_s) dt_s = dt - dt_s_sum;
 
-					initialize_a_solid_step.parallel_exec(dt_s);
+					//initialize_a_solid_step.parallel_exec(dt_s);
 
 					//plate_update_contact_density.parallel_exec(dt_s);
 					//plate_compute_solid_contact_forces.parallel_exec(dt_s);
