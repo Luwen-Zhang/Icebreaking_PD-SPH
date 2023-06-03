@@ -191,7 +191,7 @@ int main()
 	//----------------------------------------------------------------------	
 	SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 	SimpleDynamics<NormalDirectionFromBodyShape> plate_normal_direction(plate);	
-	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluidforPD> fluid_pressure_force_on_plate(plate_water_contact_relation);
+	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluidRiemannforPD> fluid_pressure_force_on_plate(plate_water_contact_relation);
 	solid_dynamics::AverageVelocityAndAcceleration average_velocity_and_acceleration(plate);
 	//----------------------------------------------------------------------
 	//	Algorithms of Elastic dynamics.
