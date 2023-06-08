@@ -583,6 +583,28 @@ namespace SPH
 			}
 		}
 		//=================================================================================================//
+		BondBreakBySigma1andSigma3::
+			BondBreakBySigma1andSigma3(BaseInnerRelation& inner_relation, Real& cr_value1, Real& cr_value2)
+			: BondBreakByPrinStress(inner_relation, cr_value1) {
+			max_tension_ = cr_value1;
+			max_shear_ = cr_value2;
+		}
+		//=================================================================================================//
+		bool BondBreakBySigma1andSigma3::checkBondLive(Matd& stress_eq, Real& stretch_rate)
+		{
+			Vecd prin_stress = stress_eq.eigenvalues().real();
+			Real sigma1 = prin_stress.maxCoeff();
+			Real sigma3 = prin_stress.minCoeff();
+			Real max_shear = (sigma1 - sigma3) / 2;
+
+			if (sigma1 > max_tension_ || max_shear > max_shear_ || stretch_rate > 0.5) {
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
+		//=================================================================================================//
 		ADRFirstStep::ADRFirstStep(SPHBody& sph_body)
 			: LocalDynamicsReduce<Real, ReduceSum<Real>>(sph_body, Real(0.0)),
 			NosbPDSolidDataSimple(sph_body), pos0_(particles_->pos0_), pos_(particles_->pos_),

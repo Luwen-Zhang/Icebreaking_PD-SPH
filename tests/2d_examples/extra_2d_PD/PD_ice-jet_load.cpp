@@ -24,10 +24,10 @@ BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(ID + BW, RL + IT + JH + 
 /**
  * @brief 	Define the corner point of Jet geomerty.
  */
-Vec2d JetP_lb(ID / 2 - JR - Eps, RL + IT + BW); 		/**< Left bottom. */
-Vec2d JetP_lt(ID / 2 - JR - Eps, RL + IT + JH + BW); 		/**< Left top. */
-Vec2d JetP_rt(ID / 2 + JR - Eps, RL + IT + JH + BW); 				/**< Right top. */
-Vec2d JetP_rb(ID / 2 + JR - Eps, RL + IT + BW); 				/**< Right bottom. */
+Vec2d JetP_lb(ID / 2 - JR - resolution_ref / 3, RL + IT + BW); 		/**< Left bottom. */
+Vec2d JetP_lt(ID / 2 - JR - resolution_ref / 3, RL + IT + JH + BW); 		/**< Left top. */
+Vec2d JetP_rt(ID / 2 + JR - resolution_ref / 3, RL + IT + JH + BW); 				/**< Right top. */
+Vec2d JetP_rb(ID / 2 + JR - resolution_ref / 3, RL + IT + BW); 				/**< Right bottom. */
 /**
  * @brief 	Define the corner point of Ice plate geomerty.
  */
@@ -43,7 +43,7 @@ StdVec<Vecd> observation_location = {PlateP_lb};
 //----------------------------------------------------------------------
 Real rho0_f = 1000.0;						   /**< Reference density of fluid. */
 Real gravity_g = 9.81;				   /**< Value of gravity. */
-Real U_f = 57.75;					   /**< Characteristic velocity. */
+Real U_f = 73.81;					   /**< Characteristic velocity. */
 Real c_f = SMAX(U_f * sqrt(JH * gravity_g), 10 * U_f); /**< Reference sound speed. */
 Real mu_f = 0.0;
 Real k_f = 0.0;
@@ -181,6 +181,8 @@ int main()
 	//----------------------------------------------------------------------
 	SimpleDynamics<WaterInitialCondition> jet_vel_initialization(water_block);
 	Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWall> pressure_relaxation(water_block_complex_relation);
+	Real h = water_block.sph_adaptation_->getKernel()->CutOffRadius();
+	pressure_relaxation.setcoeffacousticdamper(rho0_f, c_f, h);
 	Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWall> density_relaxation(water_block_complex_relation);
 	InteractionWithUpdate<fluid_dynamics::DensitySummationFreeSurfaceComplex> update_density_by_summation(water_block_complex_relation);
 	SimpleDynamics<TimeStepInitialization> initialize_a_fluid_step(water_block, makeShared<Gravity>(Vecd(0.0, -gravity_g)));
@@ -192,6 +194,7 @@ int main()
 	SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 	SimpleDynamics<NormalDirectionFromBodyShape> plate_normal_direction(plate);	
 	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluidRiemannforPD> fluid_pressure_force_on_plate(plate_water_contact_relation);
+	fluid_pressure_force_on_plate.setcoeffacousticdamper(rho0_f, c_f, h);
 	solid_dynamics::AverageVelocityAndAcceleration average_velocity_and_acceleration(plate);
 	//----------------------------------------------------------------------
 	//	Algorithms of Elastic dynamics.
@@ -276,7 +279,7 @@ int main()
 		<< "# COMPUTATION START #" << "\n" << "\n";
 
 	//Time file
-	std::string Timepath = io_environment.output_folder_ + "/TimeLog.txt";
+	std::string Timepath = io_environment.output_folder_ + "/LogTime.txt";
 	if (fs::exists(Timepath))
 	{
 		fs::remove(Timepath);

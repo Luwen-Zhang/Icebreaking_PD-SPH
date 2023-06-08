@@ -457,6 +457,23 @@ namespace SPH
 			StdLargeVec<Matd>& stress_;
 		};
 		/**
+		* @Created by Haotian Shi from SJTU
+		* @class BondBreakBySigma1andSigma3
+		* @brief fracture criteria based on MAX principal stress and MAX shear stress
+		*/
+		class BondBreakBySigma1andSigma3 : public BondBreakByPrinStress
+		{
+		public:
+			explicit BondBreakBySigma1andSigma3(BaseInnerRelation& inner_relation, Real& cr_value1, Real& cr_value2);
+			virtual ~BondBreakBySigma1andSigma3() {};
+
+			virtual bool checkBondLive(Matd& stress_eq, Real& stretch_rate) override;
+
+		protected:
+			Real max_tension_;
+			Real max_shear_;
+		};
+		/**
 		 * @Created by Haotian Shi from SJTU
 		 * @class ADRFirstStep
 		 * @brief computing SUM(U^T * K * U) 
