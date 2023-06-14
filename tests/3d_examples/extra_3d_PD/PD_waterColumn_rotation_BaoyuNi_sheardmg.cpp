@@ -10,11 +10,11 @@ using namespace SPH;
 // general parameters for geometry
 
 Real LR = 0.0036;				  // liquid column radius in XZ
-Real LH = 10 * LR;				  // liquid column height in Y
+Real LH = 12 * LR;				  // liquid column height in Y
 Real inner_circle_radius = LR;
 int resolution(20);
 
-Real plate_Y = 0.009;				/**< thickness of the ice plate. */
+Real plate_Y = 0.0055;				/**< thickness of the ice plate. */
 Real plate_R = 0.0575;	/**< width of the ice plate. */
 
 Real resolution_ref = LR / 4;	  // particle spacing
@@ -23,7 +23,7 @@ Real BW = resolution_ref * 3; // boundary width
 // for material properties of the fluid
 Real rho0_f = 1000.0;
 Real gravity_g = 9.81;
-Real U_f = 48.24;
+Real U_f = 73.81;
 //Real c_f = 10.0 * U_f;
 Real c_f = SMIN(10.0 * U_f, 1580.0);
 Real mu_f = 0.0;
@@ -43,7 +43,7 @@ class WaterBlock : public ComplexShape
 public:
 	explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
 	{		
-		Vecd translation_column(0.0, 1.5 * LH, 0);
+		Vecd translation_column(0.0, 1.5 * LH - 0.006, 0);
 		add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0, 1.0, 0), inner_circle_radius,
 			0.5 * LH, resolution, translation_column);
 	}
@@ -131,6 +131,7 @@ int main(int ac, char *av[])
 	size_t particle_num_w = 0;
 
 	PDBody plate(system, makeShared<PlateShape>("PDBody"));
+	//SolidBody plate(system, makeShared<PlateShape>("SPHBody"));
 	plate.defineBodyLevelSetShape()->writeLevelSet(io_environment);
 	plate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
@@ -236,7 +237,8 @@ int main(int ac, char *av[])
 	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD>
 		numerical_damping(plate_inner_relation, plate.sph_adaptation_->getKernel());
 	//breaking bonds based on the MAX principal stress criteria
-	InteractionDynamics<solid_dynamics::BondBreakBySigma1andSigma3> check_bondLive(plate_inner_relation, max_tension_stress, max_shear_stress);
+	//InteractionDynamics<solid_dynamics::BondBreakBySigma1andSigma3> check_bondLive(plate_inner_relation, max_tension_stress, max_shear_stress);
+	InteractionDynamics<solid_dynamics::BondBreakByPrinStress> check_bondLive(plate_inner_relation, max_tension_stress);
 		
 	SimpleDynamics<solid_dynamics::UpdateElasticNormalDirection> plate_update_normal(plate);
 	//----------------------------------------------------------------------
