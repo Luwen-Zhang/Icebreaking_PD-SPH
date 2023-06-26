@@ -92,4 +92,71 @@ namespace SPH
 
 		virtual HardeningPlasticSolid *ThisObjectPtr() override { return this; };
 	};
+
+	//from here the Plasticity for NosbPD is constructed 
+
+	/**
+	* @Created by Haotian Shi from SJTU
+	* @class PlasticSolidforPD
+	* @brief Abstract class for a generalized plastic solid for PD combining the isotropic-kinematic hardening
+	*/
+	class PlasticSolidforPD : public HughesWingetSolid
+	{
+	protected:
+		Real yield_stress_;
+		Real isotropic_hardening_modulus_;
+		Real kinematic_hardening_modulus_; //default
+
+		//StdLargeVec<Matd>& plastic_strain_;
+		StdLargeVec<Real> isotropic_hardening_q_;
+		StdLargeVec<Matd> kinematic_hardening_q_; //default
+
+		virtual void initializePlasticParameters() = 0;
+
+	public:
+		/** Constructor */
+		explicit PlasticSolidforPD(Real rho0, Real youngs_modulus, Real poisson_ratio, 
+			Real yield_stress, Real isotropic_hardening_modulus = 0.0, Real kinematic_hardening_modulus = 0.0)
+			: HughesWingetSolid(rho0, youngs_modulus, poisson_ratio), yield_stress_(yield_stress), 
+			isotropic_hardening_modulus_(isotropic_hardening_modulus), kinematic_hardening_modulus_(kinematic_hardening_modulus)
+		{
+			material_type_name_ = "PlasticSolidforPD";
+			base_particles_->registerVariable(isotropic_hardening_q_, "IsotropicHardeningParam");
+			base_particles_->registerVariable(kinematic_hardening_q_, "KinematicHardeningParam");
+		};
+		virtual ~PlasticSolidforPD() {};
+
+		Real YieldStress() { return yield_stress_; };
+		Real IsotropicHardeningModulus() { return isotropic_hardening_modulus_; };
+		Real KinematicHardeningModulus() { return kinematic_hardening_modulus_; };
+
+		/* compute yield function */
+		virtual Real YieldFunc(const Matd & stress, const Real& iso_q = 0.0, const Matd& kin_q = Matd::Zero()) = 0;
+		/** compute the stress through deformation, and plastic relaxation. */
+		virtual Matd PlasticConstitutiveRelation(const Matd& vel_grad , const Matd& stress_old, size_t index_i, Real dt = 0.0) = 0;
+
+		virtual PlasticSolidforPD* ThisObjectPtr() override { return this; };
+	};
+	/**
+	* @Created by Haotian Shi from SJTU
+	* @class J2PlasticityforPD
+	* @brief Associative plasticity for PD under J2 theory, only isotropic hardening being concerned, rate-independent
+	*/
+	class J2PlasticityforPD : public PlasticSolidforPD
+	{
+	public:
+		/** Constructor */
+		explicit J2PlasticityforPD(Real rho0, Real youngs_modulus, Real poisson_ratio, Real yield_stress, Real isotropic_hardening_modulus)
+			: PlasticSolidforPD(rho0, youngs_modulus, poisson_ratio, yield_stress, isotropic_hardening_modulus)
+		{
+			material_type_name_ = "J2PlasticityforPD";
+		};
+		virtual ~J2PlasticityforPD() {};
+
+		/* compute yield function */
+		virtual Real YieldFunc(const Matd& stress, const Real& iso_q = 0.0, const Matd& kin_q = Matd::Zero()) override;
+		/** compute the stress through deformation, and plastic relaxation. */
+		virtual Matd PlasticConstitutiveRelation(const Matd& vel_grad, const Matd& stress_old, size_t index_i, Real dt = 0.0) override;
+
+	};
 }

@@ -44,4 +44,37 @@ namespace SPH
 		return (deviatoric_PK + VolumetricKirchhoff(F.determinant()) * Matd::Identity()) * inverse_F_T;
 	}
 	//=================================================================================================//
+	Real J2PlasticityforPD::YieldFunc(const Matd& stress, const Real& iso_q = 0.0, const Matd& kin_q = Matd::Zero())
+	{
+
+	}
+	//=================================================================================================//
+	Matd J2PlasticityforPD::PlasticConstitutiveRelation(const Matd& G, const Matd& stress_old, size_t index_i, Real dt = 0.0)
+	{
+		//Symmetric part of G: rate of deformation tensor / rate of strain tensor
+		Matd Gsymm = (G + G.transpose()) * 0.5;
+		//Antisymmetric(skew) part of G: rate of rotation tensor / spin tensor / vorticity tensor
+		Matd Gskew = (G - G.transpose()) * 0.5;
+		//Coordinate transformation tensor Q: rotation of principal direction
+		Matd R = Matd::Identity() - Gskew * 0.5;
+		Matd Q = Matd::Identity() + R.inverse() * Gskew;
+
+		//Elastic Predictor
+		Matd delta_sigma = 0.5 * lambda0_ * Gsymm.trace() * Matd::Identity()
+			+ G0_ * Gsymm;//0.5 * engineering shear strain!
+		delta_sigma.diagonal() = delta_sigma.diagonal() * 2.0;//shear strain tensor
+
+		Matd trial_sigma = Q * stress_old * Q.transpose() + delta_sigma;
+		Real trial_isoHardening_q = isotropic_hardening_q_[index_i];
+
+		Real trial_function = YieldFunc(trial_sigma, trial_isoHardening_q);
+
+		if (trial_function > TinyReal)
+		{
+			Real relax_increment = 0.5 * trial_function / (G0_ + isotropic_hardening_modulus_ / 3.0);
+		}
+
+
+
+	}
 }

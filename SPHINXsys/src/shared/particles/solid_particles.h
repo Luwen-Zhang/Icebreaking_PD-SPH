@@ -243,6 +243,9 @@ namespace SPH
 		StdLargeVec<Matd> PK1_;		  /**<  the lagrange stress tensor namely the first Piola-Kirchhoff stress tensor */
 		StdLargeVec<Matd> T0_;		  /**<  force state on particle i */
 
+		//variables for Plastic deformation
+		StdLargeVec<Matd> plastic_strain_;	  /**<  Plastic Strain tensor */
+
 		/** Initialize variable for Nosb-PD particles. */
 		virtual void initializeOtherVariables() override;
 		/** Return this pointer. */

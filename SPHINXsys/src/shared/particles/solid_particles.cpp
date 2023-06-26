@@ -381,6 +381,8 @@ namespace SPH
 		registerVariable(PK1_, "PK1");
 		registerVariable(T0_, "T0");
 
+		registerVariable(plastic_strain_, "PlasticStrain");
+
 		/**
 		 * add basic output particle data
 		 */
