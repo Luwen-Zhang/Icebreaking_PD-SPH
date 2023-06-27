@@ -103,6 +103,7 @@ namespace SPH
 	class PlasticSolidforPD : public HughesWingetSolid
 	{
 	protected:
+		const Real sqrt_2_over_3_ = sqrt(2.0 / 3.0);
 		Real yield_stress_;
 		Real isotropic_hardening_modulus_;
 		Real kinematic_hardening_modulus_; //default

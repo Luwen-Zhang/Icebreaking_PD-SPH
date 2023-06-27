@@ -51,6 +51,7 @@ namespace SPH
 	//=================================================================================================//
 	Matd J2PlasticityforPD::PlasticConstitutiveRelation(const Matd& G, const Matd& stress_old, size_t index_i, Real dt = 0.0)
 	{
+		/** Hughes-Winget incremental objectivity **/
 		//Symmetric part of G: rate of deformation tensor / rate of strain tensor
 		Matd Gsymm = (G + G.transpose()) * 0.5;
 		//Antisymmetric(skew) part of G: rate of rotation tensor / spin tensor / vorticity tensor
@@ -59,22 +60,44 @@ namespace SPH
 		Matd R = Matd::Identity() - Gskew * 0.5;
 		Matd Q = Matd::Identity() + R.inverse() * Gskew;
 
-		//Elastic Predictor
+		/** Elastic Predictor **/
 		Matd delta_sigma = 0.5 * lambda0_ * Gsymm.trace() * Matd::Identity()
 			+ G0_ * Gsymm;//0.5 * engineering shear strain!
 		delta_sigma.diagonal() = delta_sigma.diagonal() * 2.0;//shear strain tensor
 
 		Matd trial_sigma = Q * stress_old * Q.transpose() + delta_sigma;
 		Real trial_isoHardening_q = isotropic_hardening_q_[index_i];
+		Matd trial_kinHardening_q = Q * kinematic_hardening_q_[index_i] * Q.transpose();
 
-		Real trial_function = YieldFunc(trial_sigma, trial_isoHardening_q);
+		//intermediate variables
+		Matd trial_relative_stress = trial_sigma - trial_kinHardening_q;
+		Real norm1 = trial_relative_stress.trace() * OneOverDimensions;
+		Matd dev_eta = trial_relative_stress - norm1 * Matd::Identity();
+		Real dev_eta_norm = dev_eta.norm();
 
+		/** Yield Function **/
+		//Real trial_function = YieldFunc(trial_sigma, trial_isoHardening_q);
+		Real trial_function = dev_eta_norm - 
+			sqrt_2_over_3_ * (trial_isoHardening_q + yield_stress_);
+				
 		if (trial_function > TinyReal)
 		{
-			Real relax_increment = 0.5 * trial_function / (G0_ + isotropic_hardening_modulus_ / 3.0);
+			/** Plastic Corrector **/
+			//delta gamma: plastic consistency increment / parameter / multiplier
+			Real relax_increment = 0.5 * trial_function / 
+				(G0_ + (isotropic_hardening_modulus_ + kinematic_hardening_modulus_) / 3.0);
+
+			Matd flow_direction = dev_eta / dev_eta_norm;
+			//update cauchy stress
+			trial_sigma -= 2.0 * G0_ * relax_increment * flow_direction;
+
+			//update hardening parameters
+			trial_isoHardening_q += sqrt_2_over_3_ * isotropic_hardening_modulus_ * relax_increment;
+			trial_kinHardening_q += isotropic_hardening_modulus_ * relax_increment * flow_direction;
 		}
+		isotropic_hardening_q_[index_i] = trial_isoHardening_q;
+		kinematic_hardening_q_[index_i] = trial_kinHardening_q;
 
-
-
+		return trial_sigma;
 	}
 }
