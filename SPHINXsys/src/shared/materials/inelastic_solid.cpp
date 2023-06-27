@@ -49,7 +49,7 @@ namespace SPH
 
 	}
 	//=================================================================================================//
-	Matd J2PlasticityforPD::PlasticConstitutiveRelation(const Matd& G, const Matd& stress_old, size_t index_i, Real dt = 0.0)
+	Matd J2PlasticityforPD::PlasticConstitutiveRelation(const Matd& G, const Matd& stress_old, Matd& epsilon_p, size_t index_i, Real dt = 0.0)
 	{
 		/** Hughes-Winget incremental objectivity **/
 		//Symmetric part of G: rate of deformation tensor / rate of strain tensor
@@ -68,6 +68,8 @@ namespace SPH
 		Matd trial_sigma = Q * stress_old * Q.transpose() + delta_sigma;
 		Real trial_isoHardening_q = isotropic_hardening_q_[index_i];
 		Matd trial_kinHardening_q = Q * kinematic_hardening_q_[index_i] * Q.transpose();
+
+		Matd trial_epsilon_p = Q * epsilon_p * Q.transpose();
 
 		//intermediate variables
 		Matd trial_relative_stress = trial_sigma - trial_kinHardening_q;
@@ -94,9 +96,13 @@ namespace SPH
 			//update hardening parameters
 			trial_isoHardening_q += sqrt_2_over_3_ * isotropic_hardening_modulus_ * relax_increment;
 			trial_kinHardening_q += isotropic_hardening_modulus_ * relax_increment * flow_direction;
+
+			//update plastic strain
+			trial_epsilon_p += relax_increment * flow_direction;
 		}
 		isotropic_hardening_q_[index_i] = trial_isoHardening_q;
 		kinematic_hardening_q_[index_i] = trial_kinHardening_q;
+		epsilon_p = trial_epsilon_p;
 
 		return trial_sigma;
 	}

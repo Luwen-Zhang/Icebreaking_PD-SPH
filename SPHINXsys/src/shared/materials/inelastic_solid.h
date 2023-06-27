@@ -134,7 +134,7 @@ namespace SPH
 		/* compute yield function */
 		virtual Real YieldFunc(const Matd & stress, const Real& iso_q = 0.0, const Matd& kin_q = Matd::Zero()) = 0;
 		/** compute the stress through deformation, and plastic relaxation. */
-		virtual Matd PlasticConstitutiveRelation(const Matd& vel_grad , const Matd& stress_old, size_t index_i, Real dt = 0.0) = 0;
+		virtual Matd PlasticConstitutiveRelation(const Matd& vel_grad , const Matd& stress_old, Matd& epsilon_p, size_t index_i, Real dt = 0.0) = 0;
 
 		virtual PlasticSolidforPD* ThisObjectPtr() override { return this; };
 	};
@@ -157,7 +157,7 @@ namespace SPH
 		/* compute yield function */
 		virtual Real YieldFunc(const Matd& stress, const Real& iso_q = 0.0, const Matd& kin_q = Matd::Zero()) override;
 		/** compute the stress through deformation, and plastic relaxation. */
-		virtual Matd PlasticConstitutiveRelation(const Matd& vel_grad, const Matd& stress_old, size_t index_i, Real dt = 0.0) override;
+		virtual Matd PlasticConstitutiveRelation(const Matd& vel_grad, const Matd& stress_old, Matd& epsilon_p, size_t index_i, Real dt = 0.0) override;
 
 	};
 }
