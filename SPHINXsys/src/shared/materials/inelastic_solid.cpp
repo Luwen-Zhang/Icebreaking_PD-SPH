@@ -61,9 +61,11 @@ namespace SPH
 		Matd Q = Matd::Identity() + R.inverse() * Gskew;
 
 		/** Elastic Predictor **/
-		Matd delta_sigma = 0.5 * lambda0_ * Gsymm.trace() * Matd::Identity()
-			+ G0_ * Gsymm;//0.5 * engineering shear strain!
-		delta_sigma.diagonal() = delta_sigma.diagonal() * 2.0;//shear strain tensor
+		Matd delta_sigma = lambda0_ * Gsymm.trace() * Matd::Identity()
+			+ 2.0 * G0_ * Gsymm;//regard Gsymm as shear strain tensor
+		//Matd delta_sigma = 0.5 * lambda0_ * Gsymm.trace() * Matd::Identity()
+		//	+ G0_ * Gsymm;//regard Gsymm as engineering shear strain!
+		//delta_sigma.diagonal() = delta_sigma.diagonal() * 2.0;//shear strain tensor
 
 		Matd trial_sigma = Q * stress_old * Q.transpose() + delta_sigma;
 		Real trial_isoHardening_q = isotropic_hardening_q_[index_i];
@@ -88,7 +90,7 @@ namespace SPH
 			//delta gamma: plastic consistency increment / parameter / multiplier
 			Real relax_increment = 0.5 * trial_function / 
 				(G0_ + (isotropic_hardening_modulus_ + kinematic_hardening_modulus_) / 3.0);
-
+			//plastic potential
 			Matd flow_direction = dev_eta / dev_eta_norm;
 			//update cauchy stress
 			trial_sigma -= 2.0 * G0_ * relax_increment * flow_direction;
