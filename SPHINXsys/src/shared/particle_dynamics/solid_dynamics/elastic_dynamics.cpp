@@ -354,6 +354,92 @@ namespace SPH
 			}
 		}
 		//=================================================================================================//
+		NosbPDSecondStepPlastic::
+			NosbPDSecondStepPlastic(BaseInnerRelation& inner_relation)
+			: LocalDynamics(inner_relation.getSPHBody()), NosbPDPlasticSolidDataInner(inner_relation),
+			plastic_solid_(particles_->plastic_solid_), particleLive_(particles_->particleLive_), Vol_(particles_->Vol_),
+			pos_(particles_->pos_), vel_(particles_->vel_), F_(particles_->F_), shape_K_1_(particles_->shape_K_1_),
+			N_(particles_->N_), N_deltaU_(particles_->N_deltaU_), N_half_(particles_->N_half_),
+			F_half_(particles_->F_half_), F_delta_(particles_->F_delta_), F_1_(particles_->F_1_), F_1_half_(particles_->F_1_half_),
+			PK1_(particles_->PK1_), T0_(particles_->T0_), stress_(particles_->stress_), plastic_strain_(particles_->plastic_strain_) {}
+		//=================================================================================================//
+		void NosbPDSecondStepPlastic::interaction(size_t index_i, Real dt)
+		{
+			if (particleLive_[index_i] == 1) {
+
+				Matd N = Matd::Zero();
+				Matd N_deltaU = Matd::Zero();
+				Matd N_half = Matd::Zero();
+
+				Vecd eta = Vecd::Zero();
+				Vecd eta_U = Vecd::Zero();
+				Vecd eta_half = Vecd::Zero();
+
+				const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
+				for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+				{
+					size_t index_j = inner_neighborhood.j_[n];
+					//r_j - r_i
+					Vecd r_ij = -inner_neighborhood.r_ij_[n] * inner_neighborhood.e_ij_[n];
+					if (inner_neighborhood.bondLive_[n]) {
+						eta = pos_[index_j] - pos_[index_i];
+						eta_U = (vel_[index_j] - vel_[index_i]) * dt;
+						eta_half = eta - eta_U * 0.5;
+					}
+					else {
+						eta = r_ij;
+						eta_U = Vecd::Zero();
+						eta_half = r_ij;
+					}
+					Matd dN = eta * r_ij.transpose();
+					Matd dN_deltaU = eta_U * r_ij.transpose();
+					Matd dN_half = eta_half * r_ij.transpose();
+					N += Vol_[index_j] * inner_neighborhood.W_ij_[n] * dN;
+					N_deltaU += Vol_[index_j] * inner_neighborhood.W_ij_[n] * dN_deltaU;
+					N_half += Vol_[index_j] * inner_neighborhood.W_ij_[n] * dN_half;
+				}
+				N_[index_i] = N;
+				N_deltaU_[index_i] = N_deltaU;
+				N_half_[index_i] = N_half;
+			}
+		}
+		//=================================================================================================//
+		void NosbPDSecondStepPlastic::update(size_t index_i, Real dt)
+		{
+			if (particleLive_[index_i] == 1) {
+				F_[index_i] = N_[index_i] * shape_K_1_[index_i];
+				F_delta_[index_i] = N_deltaU_[index_i] * shape_K_1_[index_i];
+				F_half_[index_i] = N_half_[index_i] * shape_K_1_[index_i];
+
+				F_1_[index_i] = F_[index_i].inverse();
+				F_1_half_[index_i] = F_half_[index_i].inverse();
+
+				Real detF = F_[index_i].determinant();
+				Real detF_half = F_half_[index_i].determinant();
+				if (detF < 0.0 || detF_half < 0.0) {
+					std::cout << "Particle_index = " << index_i << " has been disabled since det F < 0" << "\n"
+						<< "physical_time_ = " << GlobalStaticVariables::physical_time_ << "\n"
+						<< "dt:" << dt << "\n";
+					system("pause");
+					exit(0);
+				}
+				//G: Eulerian Velocity gradient tensor
+				Matd G = F_delta_[index_i] * F_1_half_[index_i];
+				//return-mapping (catching-up) algorithm
+				//Update Cauchy Stress by convex cutting-plane & Hughes-Winget algorithm 
+				stress_[index_i] = plastic_solid_.
+					PlasticConstitutiveRelation(G, stress_[index_i], plastic_strain_[index_i], index_i);
+				//PK1: The first Piola Kirchhoff stress tensor / Lagrange stress tensor
+				Matd PK1 = detF * F_1_[index_i] * stress_[index_i];
+				PK1_[index_i] = PK1.transpose();
+				//T0_: Force state 
+				T0_[index_i] = PK1_[index_i] * shape_K_1_[index_i];
+			}
+			else {
+				stress_[index_i] = Matd::Zero();
+			}
+		}
+		//=================================================================================================//
 		NosbPDThirdStep::
 			NosbPDThirdStep(BaseInnerRelation& inner_relation)
 			: LocalDynamics(inner_relation.getSPHBody()), NosbPDSolidDataInner(inner_relation),

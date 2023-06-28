@@ -37,6 +37,7 @@
 #include "solid_body.h"
 #include "solid_particles.h"
 #include "elastic_solid.h"
+#include <inelastic_solid.h>
 
 namespace SPH
 {
@@ -50,6 +51,7 @@ namespace SPH
 		//Added by Haotian Shi from SJTU
 		typedef DataDelegateSimple<NosbPDParticles> NosbPDSolidDataSimple;
 		typedef DataDelegateInner<NosbPDParticles> NosbPDSolidDataInner;
+		typedef DataDelegateInner<NosbPDPlasticParticles> NosbPDPlasticSolidDataInner;
 
 		/**
 		 * @class ElasticDynamicsInitialCondition
@@ -311,6 +313,34 @@ namespace SPH
 			StdLargeVec<Matd>& F_half_, & F_delta_, & F_1_, & F_1_half_;
 			StdLargeVec<Matd>& PK1_, & T0_, & stress_;
 		};
+		/**
+		 * Created by Haotian Shi from SJTU
+		 * @class NosbPDSecondStepPlastic
+		 * @brief calculate the Cauchy stress by plastic constitution
+		 */
+		class NosbPDSecondStepPlastic : public LocalDynamics, public NosbPDPlasticSolidDataInner
+		{
+		public:
+			explicit NosbPDSecondStepPlastic(BaseInnerRelation& inner_relation);
+			virtual ~NosbPDSecondStepPlastic() {};
+
+			void interaction(size_t index_i, Real dt = 0.0);
+			void update(size_t index_i, Real dt = 0.0);
+
+		protected:
+			PlasticSolidforPD& plastic_solid_;
+			
+			StdLargeVec<int>& particleLive_;
+			StdLargeVec<Real>& Vol_;
+			StdLargeVec<Vecd>& pos_, & vel_;
+			StdLargeVec<Matd>& F_, & shape_K_1_;
+			StdLargeVec<Matd>& N_, & N_deltaU_, & N_half_;
+			StdLargeVec<Matd>& F_half_, & F_delta_, & F_1_, & F_1_half_;
+			StdLargeVec<Matd>& PK1_, & T0_, & stress_;
+			StdLargeVec<Matd>& plastic_strain_;
+
+		};
+
 		/**
 		* @Created by Haotian Shi from SJTU
 		* @class NosbPDThirdStep

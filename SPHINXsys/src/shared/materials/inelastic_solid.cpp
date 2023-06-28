@@ -44,12 +44,24 @@ namespace SPH
 		return (deviatoric_PK + VolumetricKirchhoff(F.determinant()) * Matd::Identity()) * inverse_F_T;
 	}
 	//=================================================================================================//
-	Real J2PlasticityforPD::YieldFunc(const Matd& stress, const Real& iso_q = 0.0, const Matd& kin_q = Matd::Zero())
+	void PlasticSolidforPD::initializePlasticParameters()
 	{
-
+		base_particles_->registerVariable(isotropic_hardening_q_, "IsotropicHardeningParam");
+		base_particles_->registerVariable(kinematic_hardening_q_, "KinematicHardeningParam");
 	}
 	//=================================================================================================//
-	Matd J2PlasticityforPD::PlasticConstitutiveRelation(const Matd& G, const Matd& stress_old, Matd& epsilon_p, size_t index_i, Real dt = 0.0)
+	void PlasticSolidforPD::assignBaseParticles(BaseParticles* base_particles)
+	{
+		ElasticSolid::assignBaseParticles(base_particles);
+		initializePlasticParameters();
+	}
+	//=================================================================================================//
+	Real J2PlasticityforPD::YieldFunc(const Matd& stress, const Real& iso_q, const Matd& kin_q)
+	{
+		return 0;
+	}
+	//=================================================================================================//
+	Matd J2PlasticityforPD::PlasticConstitutiveRelation(const Matd& G, const Matd& stress_old, Matd& epsilon_p, size_t index_i, Real dt)
 	{
 		/** Hughes-Winget incremental objectivity **/
 		//Symmetric part of G: rate of deformation tensor / rate of strain tensor

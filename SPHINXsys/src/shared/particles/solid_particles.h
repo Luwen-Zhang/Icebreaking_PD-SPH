@@ -30,6 +30,7 @@
 #define SOLID_PARTICLES_H
 
 #include "elastic_solid.h"
+#include <inelastic_solid.h>
 #include "base_particles.h"
 #include "base_particles.hpp"
 
@@ -225,7 +226,7 @@ namespace SPH
 	{
 	public:
 		NosbPDParticles(SPHBody& sph_body, ElasticSolid* elastic_solid);
-		virtual ~NosbPDParticles() {};
+		virtual ~NosbPDParticles() {};		
 				
 		StdLargeVec<Matd> shape_K_;			  /**<  shape tensor determined in the reference configuration */
 		StdLargeVec<Matd> shape_K_1_;		  /**<  inverse of shape_K */
@@ -241,15 +242,33 @@ namespace SPH
 
 		StdLargeVec<Matd> stress_;	  /**<  Cauchy Stress tensor */
 		StdLargeVec<Matd> PK1_;		  /**<  the lagrange stress tensor namely the first Piola-Kirchhoff stress tensor */
-		StdLargeVec<Matd> T0_;		  /**<  force state on particle i */
-
-		//variables for Plastic deformation
-		StdLargeVec<Matd> plastic_strain_;	  /**<  Plastic Strain tensor */
+		StdLargeVec<Matd> T0_;		  /**<  force state on particle i */		
 
 		/** Initialize variable for Nosb-PD particles. */
 		virtual void initializeOtherVariables() override;
 		/** Return this pointer. */
 		virtual NosbPDParticles* ThisObjectPtr() override { return this; };
 	};
+	/**
+	 * Created by Haotian Shi from SJTU
+	 * @class NosbPDPlasticParticles
+	 * @brief A group of particles with Non-Oridinary State Based Peridynamic body particle data.
+	 */
+	class NosbPDPlasticParticles : public NosbPDParticles
+	{
+	public:
+		NosbPDPlasticParticles(SPHBody& sph_body, PlasticSolidforPD* elastic_solid);
+		virtual ~NosbPDPlasticParticles() {};
+
+		PlasticSolidforPD& plastic_solid_;
+		//variables for Plastic deformation
+		StdLargeVec<Matd> plastic_strain_;	  /**<  Plastic Strain tensor */
+
+		/** Initialize variable for Nosb-PD particles. */
+		virtual void initializeOtherVariables() override;
+		/** Return this pointer. */
+		virtual NosbPDPlasticParticles* ThisObjectPtr() override { return this; };
+	};
+
 }
 #endif // SOLID_PARTICLES_H

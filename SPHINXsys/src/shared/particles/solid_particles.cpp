@@ -379,9 +379,7 @@ namespace SPH
 
 		registerVariable(stress_, "CauchyStress");
 		registerVariable(PK1_, "PK1");
-		registerVariable(T0_, "T0");
-
-		registerVariable(plastic_strain_, "PlasticStrain");
+		registerVariable(T0_, "T0");	
 
 		/**
 		 * add basic output particle data
@@ -390,5 +388,25 @@ namespace SPH
 		//addVariableToWrite<Matd>("shapeK_1");
 		addVariableToWrite<Matd>("CauchyStress");
 				
+	}
+	//=================================================================================================//
+	NosbPDPlasticParticles::
+		NosbPDPlasticParticles(SPHBody& sph_body, PlasticSolidforPD* plastic_solid)
+		: NosbPDParticles(sph_body, plastic_solid),
+		plastic_solid_(*plastic_solid) {}
+	//=================================================================================================//
+	void NosbPDPlasticParticles::initializeOtherVariables()
+	{
+		NosbPDParticles::initializeOtherVariables();
+		/**
+		 *	register particle data
+		 */
+		registerVariable(plastic_strain_, "PlasticStrain");
+
+		/**
+		 * add basic output particle data
+		 */
+		addVariableToWrite<Matd>("PlasticStrain");
+
 	}
 }

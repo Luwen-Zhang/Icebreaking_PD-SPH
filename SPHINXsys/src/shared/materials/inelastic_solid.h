@@ -112,7 +112,7 @@ namespace SPH
 		StdLargeVec<Real> isotropic_hardening_q_;
 		StdLargeVec<Matd> kinematic_hardening_q_; //default
 
-		virtual void initializePlasticParameters() = 0;
+		virtual void initializePlasticParameters();
 
 	public:
 		/** Constructor */
@@ -121,9 +121,7 @@ namespace SPH
 			: HughesWingetSolid(rho0, youngs_modulus, poisson_ratio), yield_stress_(yield_stress), 
 			isotropic_hardening_modulus_(isotropic_hardening_modulus), kinematic_hardening_modulus_(kinematic_hardening_modulus)
 		{
-			material_type_name_ = "PlasticSolidforPD";
-			base_particles_->registerVariable(isotropic_hardening_q_, "IsotropicHardeningParam");
-			base_particles_->registerVariable(kinematic_hardening_q_, "KinematicHardeningParam");
+			material_type_name_ = "PlasticSolidforPD";			
 		};
 		virtual ~PlasticSolidforPD() {};
 
@@ -131,6 +129,8 @@ namespace SPH
 		Real IsotropicHardeningModulus() { return isotropic_hardening_modulus_; };
 		Real KinematicHardeningModulus() { return kinematic_hardening_modulus_; };
 
+		/** assign particles to this material */
+		virtual void assignBaseParticles(BaseParticles* base_particles) override;;
 		/* compute yield function */
 		virtual Real YieldFunc(const Matd & stress, const Real& iso_q = 0.0, const Matd& kin_q = Matd::Zero()) = 0;
 		/** compute the stress through deformation, and plastic relaxation. */
