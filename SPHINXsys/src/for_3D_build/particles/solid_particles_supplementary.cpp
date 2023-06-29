@@ -57,4 +57,22 @@ namespace SPH
 				 3.0 * (sigmaxy * sigmaxy + sigmaxz * sigmaxz + sigmayz * sigmayz));
 	}
 	//=================================================================================================//
+	void VonMisesStressforPD::update(size_t index_i, Real dt)
+	{
+		Real norm1 = stress_[index_i].trace() * OneOverDimensions;
+		Matd dev_eta = stress_[index_i] - norm1 * Matd::Identity();
+		Real dev_eta_norm = dev_eta.norm();
+
+		derived_variable_[index_i] = sqrt_3_over_2_ * dev_eta_norm;
+	}
+	//=================================================================================================//
+	void VonMisesPlasticStrainforPD::update(size_t index_i, Real dt)
+	{
+		Real norm1 = plastic_strain_[index_i].trace() * OneOverDimensions;
+		Matd dev_eta = plastic_strain_[index_i] - norm1 * Matd::Identity();
+		Real dev_eta_norm = dev_eta.norm();
+
+		derived_variable_[index_i] = sqrt_3_over_2_ * dev_eta_norm;
+	}
+	//=================================================================================================//
 }

@@ -197,5 +197,46 @@ namespace SPH
 	protected:
 		Real poisson_ratio_;
 	};
+	//----------------------------------------------------------------------
+	//		for PD plastic solid dynamics variables
+	//----------------------------------------------------------------------
+	typedef DataDelegateSimple<NosbPDParticles> PDSolidDataSimple;
+	typedef DataDelegateSimple<NosbPDPlasticParticles> PDPlasticSolidDataSimple;
+	/**
+	 * @Created by Haotian Shi from SJTU
+	 * @class VonMisesStressforPD
+	 * @brief computing von_Mises_stress in context of NosbPD
+	 */
+	class VonMisesStressforPD : public BaseDerivedVariable<Real>,
+		public PDSolidDataSimple,
+		public LocalDynamics
+	{
+	public:
+		explicit VonMisesStressforPD(SPHBody& sph_body);
+		virtual ~VonMisesStressforPD() {};
+		void update(size_t index_i, Real dt = 0.0);
+
+	protected:		
+		const Real sqrt_3_over_2_ = sqrt(3.0 / 2.0);
+		StdLargeVec<Matd>& stress_;	
+	};
+	/**
+	 * @Created by Haotian Shi from SJTU
+	 * @class VonMisesPlasticStrainforPD
+	 * @brief computing von_Mises_plastic_strain
+	 */
+	class VonMisesPlasticStrainforPD : public BaseDerivedVariable<Real>,
+		public PDPlasticSolidDataSimple,
+		public LocalDynamics
+	{
+	public:
+		explicit VonMisesPlasticStrainforPD(SPHBody& sph_body);
+		virtual ~VonMisesPlasticStrainforPD() {};
+		void update(size_t index_i, Real dt = 0.0);
+
+	protected:
+		const Real sqrt_3_over_2_ = sqrt(3.0 / 2.0);
+		StdLargeVec<Matd>& plastic_strain_;
+	};
 }
 #endif // SOLID_PARTICLES_VARIABLE_H

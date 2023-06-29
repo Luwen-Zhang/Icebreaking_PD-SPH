@@ -93,5 +93,13 @@ namespace SPH
     {
         derived_variable_[index_i] = particles_->getVonMisesStrainDynamic(index_i, poisson_ratio_);
     }
-    //=================================================================================================//
+    //=================================================================================================//     
+    VonMisesStressforPD::VonMisesStressforPD(SPHBody& sph_body)
+        : BaseDerivedVariable<Real>(sph_body, "VonMisesStressforPD"), PDSolidDataSimple(sph_body),
+        LocalDynamics(sph_body),  stress_(particles_->stress_) {}
+    //=================================================================================================//     
+    VonMisesPlasticStrainforPD::VonMisesPlasticStrainforPD(SPHBody& sph_body)
+        : BaseDerivedVariable<Real>(sph_body, "VonMisesPlasticStrainforPD"), PDPlasticSolidDataSimple(sph_body),
+        LocalDynamics(sph_body), plastic_strain_(particles_->plastic_strain_) {}
+    //=================================================================================================//     
 }

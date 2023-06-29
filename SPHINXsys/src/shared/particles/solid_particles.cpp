@@ -407,6 +407,8 @@ namespace SPH
 		 * add basic output particle data
 		 */
 		//addVariableToWrite<Matd>("PlasticStrain");
+		addDerivedVariableToWrite<VonMisesStressforPD>();
+		addDerivedVariableToWrite<VonMisesPlasticStrainforPD>();
 
 	}
 }

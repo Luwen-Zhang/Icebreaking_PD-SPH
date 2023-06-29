@@ -75,7 +75,7 @@ namespace SPH
 			StdLargeVec<Vecd> &n_, &n0_;
 			StdLargeVec<Vecd> &vel_, &acc_;
 		};
-
+		using LoadBodyPartConstraint = BaseMotionConstraint<BodyPartByParticle>;//Created by Haotian_Shi from SJTU
 		/**@class FixConstraint
 		 * @brief Constraint with zero velocity.
 		 */
