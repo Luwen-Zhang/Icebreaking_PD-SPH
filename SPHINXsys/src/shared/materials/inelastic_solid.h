@@ -109,8 +109,8 @@ namespace SPH
 		Real kinematic_hardening_modulus_; //default
 
 		//StdLargeVec<Matd>& plastic_strain_;
-		StdLargeVec<Real> isotropic_hardening_q_;
-		StdLargeVec<Matd> kinematic_hardening_q_; //default
+		StdLargeVec<Real> isotropic_hardening_ISV1_;
+		StdLargeVec<Matd> kinematic_hardening_ISV2_; //default
 
 		virtual void initializePlasticParameters();
 
@@ -145,10 +145,19 @@ namespace SPH
 	*/
 	class J2PlasticityforPD : public PlasticSolidforPD
 	{
+	protected:
+		//Parameter for Saturation-typed hardening function
+		Real sigmaY_infinite_;
+		Real sigmaY_0_;
+		Real index_kesi_;
+
 	public:
 		/** Constructor */
-		explicit J2PlasticityforPD(Real rho0, Real youngs_modulus, Real poisson_ratio, Real yield_stress, Real isotropic_hardening_modulus)
-			: PlasticSolidforPD(rho0, youngs_modulus, poisson_ratio, yield_stress, isotropic_hardening_modulus)
+		explicit J2PlasticityforPD(Real rho0, Real youngs_modulus, Real poisson_ratio, Real yield_stress,
+			Real isotropic_hardening_modulus = 0.0, Real kinematic_hardening_modulus = 0.0)
+			: PlasticSolidforPD(rho0, youngs_modulus, poisson_ratio, yield_stress, 
+				isotropic_hardening_modulus, kinematic_hardening_modulus), 
+			sigmaY_infinite_(0.715e9), sigmaY_0_(yield_stress), index_kesi_(16.93)
 		{
 			material_type_name_ = "J2PlasticityforPD";
 		};
@@ -156,6 +165,13 @@ namespace SPH
 
 		/* compute yield function */
 		virtual Real YieldFunc(const Matd& stress, const Real& iso_q = 0.0, const Matd& kin_q = Matd::Zero()) override;
+		/* compute hardening varibles by hardening constitution */
+		inline Real IsoHardeningFunc(const Real& ISV1) 
+		{
+			Real exponent = exp(-index_kesi_ * ISV1);
+			return isotropic_hardening_modulus_ * ISV1 + (sigmaY_infinite_ - sigmaY_0_) * (1 - exponent);
+		};
+		inline Matd KinHardeningFunc(const Matd& ISV2) { return kinematic_hardening_modulus_ * ISV2; };
 		/** compute the stress through deformation, and plastic relaxation. */
 		virtual Matd PlasticConstitutiveRelation(const Matd& vel_grad, const Matd& stress_old, Matd& epsilon_p, size_t index_i, Real dt = 0.0) override;
 

@@ -9,7 +9,7 @@ using namespace SPH;
 
 // general parameters for geometry
 
-Real bar_Y = 0.02667;	/**< length of the metal bar. */
+Real bar_Y = 2.0 * 0.02667;	/**< length of the metal bar. */
 Real bar_R = 0.006413;	/**< radius of the metal bar. */
 int resolution(20);
 Real resolution_ref = bar_R / 12;	  // particle spacing
@@ -25,7 +25,7 @@ Real Youngs_modulus = 206.9e9;
 Real sigma_Y0 = 0.45e9;
 Real sigma_Y_infinite = 0.715e9;
 Real index_kesi = 16.93;
-Real hardening_modulus_H = 0.12924e9;
+Real isohardening_modulus_H = 0.12924e9;
 //Damage parameters
 Real max_tension_stress = 2.2e6;
 Real max_shear_stress = 1.7e6;
@@ -50,18 +50,19 @@ int main(int ac, char* av[])
 	//----------------------------------------------------------------------
 	BoundingBox system_domain_bounds(Vecd(-bar_R - BW, -BW, -bar_R - BW), Vecd(bar_R + BW, bar_Y + BW, bar_R + BW));
 	SPHSystem system(system_domain_bounds, resolution_ref);
-	system.setRunParticleRelaxation(false);
-	system.setReloadParticles(true);
+	system.setRunParticleRelaxation(true);
+	system.setReloadParticles(false);
 	system.handleCommandlineOptions(ac, av);
 	IOEnvironment io_environment(system);
 
 	//----------------------------------------------------------------------
 	//	Creating bodies with corresponding materials and particles.
 	//----------------------------------------------------------------------
-	PDBody bar(system, makeShared<BarShape>("PDBody"));
-	//SolidBody bar(system, makeShared<PlateShape>("SPHBody"));
+	//PDBody bar(system, makeShared<BarShape>("PDBody"));
+	SolidBody bar(system, makeShared<BarShape>("SPHBody"));
 	bar.defineBodyLevelSetShape()->writeLevelSet(io_environment);
-	bar.defineParticlesAndMaterial<NosbPDPlasticParticles, J2PlasticityforPD>(rho0_s, Youngs_modulus, poisson);
+	bar.defineParticlesAndMaterial<NosbPDPlasticParticles, J2PlasticityforPD>(rho0_s, Youngs_modulus, poisson, 
+		sigma_Y0, isohardening_modulus_H, 0.0);
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
 		? bar.generateParticles<ParticleGeneratorReload>(io_environment, bar.getName())
 		: bar.generateParticles<ParticleGeneratorLattice>();
@@ -212,67 +213,69 @@ int main(int ac, char* av[])
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
-	while (GlobalStaticVariables::physical_time_ < end_time)
-	{
-		Real integration_time = 0.0;
-		while (integration_time < output_interval)
-		{
-			ite++;
-			dt = dt_s_0;
-			integration_time += dt;
-			GlobalStaticVariables::physical_time_ += dt;
-			if (ite % 100 == 0) {
-				std::cout << "	N=" << ite << " Time: "
-					<< GlobalStaticVariables::physical_time_ << "	dt: "
-					<< dt << "\n";
-				log_file << "	N=" << ite << " Time: "
-					<< GlobalStaticVariables::physical_time_ << "	dt: "
-					<< dt << "\n";
-			}
-			//initialize_a_solid_step.parallel_exec(dt);
+	//while (GlobalStaticVariables::physical_time_ < end_time)
+	//{
+	//	Real integration_time = 0.0;
+	//	while (integration_time < output_interval)
+	//	{
+	//		ite++;
+	//		dt = dt_s_0;
+	//		integration_time += dt;
+	//		GlobalStaticVariables::physical_time_ += dt;
+	//		if (ite % 100 == 0) {
+	//			std::cout << "	N=" << ite << " Time: "
+	//				<< GlobalStaticVariables::physical_time_ << "	dt: "
+	//				<< dt << "\n";
+	//			log_file << "	N=" << ite << " Time: "
+	//				<< GlobalStaticVariables::physical_time_ << "	dt: "
+	//				<< dt << "\n";
+	//		}
+	//		//initialize_a_solid_step.parallel_exec(dt);
 
-			NosbPD_firstStep.parallel_exec(dt);
-			NosbPD_secondStepPlastic.parallel_exec(dt);
-			hourglass_control.parallel_exec(dt);
-			numerical_damping.parallel_exec(dt);
-			NosbPD_thirdStep.parallel_exec(dt);
-			/*cn1 = SMAX(TinyReal, computing_cn1.parallel_exec(dt));
-			cn2 = computing_cn2.parallel_exec(dt);
-			if (cn2 > TinyReal) {
-				ADR_cn = 2.0 * sqrt(cn1 / cn2);
-			}
-			else {
-				ADR_cn = 0.0;
-			}
-			ADR_cn = 0.01 * ADR_cn;
-			NosbPD_fourthStepADR.getADRcn(ADR_cn);*/
-			//NosbPD_fourthStepADR.parallel_exec(dt);
-			NosbPD_fourthStep.parallel_exec(dt);
+	//		NosbPD_firstStep.parallel_exec(dt);
+	//		NosbPD_secondStepPlastic.parallel_exec(dt);
 
-			constraint_holder.parallel_exec(dt);
+	//		hourglass_control.parallel_exec(dt);
+	//		numerical_damping.parallel_exec(dt);
+
+	//		NosbPD_thirdStep.parallel_exec(dt);
+	//		/*cn1 = SMAX(TinyReal, computing_cn1.parallel_exec(dt));
+	//		cn2 = computing_cn2.parallel_exec(dt);
+	//		if (cn2 > TinyReal) {
+	//			ADR_cn = 2.0 * sqrt(cn1 / cn2);
+	//		}
+	//		else {
+	//			ADR_cn = 0.0;
+	//		}
+	//		ADR_cn = 0.01 * ADR_cn;
+	//		NosbPD_fourthStepADR.getADRcn(ADR_cn);*/
+	//		//NosbPD_fourthStepADR.parallel_exec(dt);
+	//		NosbPD_fourthStep.parallel_exec(dt);
+
+	//		//constraint_holder.parallel_exec(dt);
 
 
-		}		
-		
+	//	}		
+	//	
 
-		//write_water_mechanical_energy.writeToFile(number_of_iterations);
+	//	//write_water_mechanical_energy.writeToFile(number_of_iterations);
 
-		tick_count t2 = tick_count::now();
-		write_states.writeToFile();
-		time_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "\n";
-		tick_count t3 = tick_count::now();
-		interval += t3 - t2;
-	}
-	tick_count t4 = tick_count::now();
+	//	tick_count t2 = tick_count::now();
+	//	write_states.writeToFile();
+	//	time_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "\n";
+	//	tick_count t3 = tick_count::now();
+	//	interval += t3 - t2;
+	//}
+	//tick_count t4 = tick_count::now();
 
-	tick_count::interval_t tt;
-	tick_count::interval_t tt2;
-	tt = t4 - t1 - interval;
-	tt2 = t4 - t1;
-	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
-	log_file << "\n" << "Total wall time for computation: " << tt.seconds() << " seconds." << endl;
-	std::cout << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
-	log_file << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
+	//tick_count::interval_t tt;
+	//tick_count::interval_t tt2;
+	//tt = t4 - t1 - interval;
+	//tt2 = t4 - t1;
+	//std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
+	//log_file << "\n" << "Total wall time for computation: " << tt.seconds() << " seconds." << endl;
+	//std::cout << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
+	//log_file << "\n" << "Total wall time for computation & output: " << tt2.seconds() << " seconds." << endl;
 
 	return 0;
 }

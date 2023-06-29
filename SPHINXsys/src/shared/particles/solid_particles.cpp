@@ -406,7 +406,7 @@ namespace SPH
 		/**
 		 * add basic output particle data
 		 */
-		addVariableToWrite<Matd>("PlasticStrain");
+		//addVariableToWrite<Matd>("PlasticStrain");
 
 	}
 }

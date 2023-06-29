@@ -46,8 +46,8 @@ namespace SPH
 	//=================================================================================================//
 	void PlasticSolidforPD::initializePlasticParameters()
 	{
-		base_particles_->registerVariable(isotropic_hardening_q_, "IsotropicHardeningParam");
-		base_particles_->registerVariable(kinematic_hardening_q_, "KinematicHardeningParam");
+		base_particles_->registerVariable(isotropic_hardening_ISV1_, "IsotropicHardeningParam");
+		base_particles_->registerVariable(kinematic_hardening_ISV2_, "KinematicHardeningParam");
 	}
 	//=================================================================================================//
 	void PlasticSolidforPD::assignBaseParticles(BaseParticles* base_particles)
@@ -80,10 +80,13 @@ namespace SPH
 		//delta_sigma.diagonal() = delta_sigma.diagonal() * 2.0;//shear strain tensor
 
 		Matd trial_sigma = Q * stress_old * Q.transpose() + delta_sigma;
-		Real trial_isoHardening_q = isotropic_hardening_q_[index_i];
-		Matd trial_kinHardening_q = Q * kinematic_hardening_q_[index_i] * Q.transpose();
-
 		Matd trial_epsilon_p = Q * epsilon_p * Q.transpose();
+		//Predict the ISVs
+		Real trial_isoHardening_ISV1 = isotropic_hardening_ISV1_[index_i];
+		Matd trial_kinHardening_ISV2 = Q * kinematic_hardening_ISV2_[index_i] * Q.transpose();
+		//Calculate Hardening variables 
+		Real trial_isoHardening_q = IsoHardeningFunc(trial_isoHardening_ISV1);
+		Matd trial_kinHardening_q = KinHardeningFunc(trial_kinHardening_ISV2);
 
 		//intermediate variables
 		Matd trial_relative_stress = trial_sigma - trial_kinHardening_q;
@@ -106,17 +109,16 @@ namespace SPH
 			Matd flow_direction = dev_eta / dev_eta_norm;
 			//update cauchy stress
 			trial_sigma -= 2.0 * G0_ * relax_increment * flow_direction;
-
-			//update hardening parameters
-			trial_isoHardening_q += sqrt_2_over_3_ * isotropic_hardening_modulus_ * relax_increment;
-			trial_kinHardening_q += isotropic_hardening_modulus_ * relax_increment * flow_direction;
-
 			//update plastic strain
 			trial_epsilon_p += relax_increment * flow_direction;
+			//update the ISVs
+			trial_isoHardening_ISV1 += sqrt_2_over_3_ * relax_increment;
+			trial_kinHardening_ISV2 += relax_increment * flow_direction;			
 		}
-		isotropic_hardening_q_[index_i] = trial_isoHardening_q;
-		kinematic_hardening_q_[index_i] = trial_kinHardening_q;
+		
 		epsilon_p = trial_epsilon_p;
+		isotropic_hardening_ISV1_[index_i] = trial_isoHardening_ISV1;
+		kinematic_hardening_ISV2_[index_i] = trial_kinHardening_ISV2;
 
 		return trial_sigma;
 	}
