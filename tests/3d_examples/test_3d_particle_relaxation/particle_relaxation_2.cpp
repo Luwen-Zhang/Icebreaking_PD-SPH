@@ -9,16 +9,24 @@
 #include "sphinxsys.h"
 using namespace SPH;
 
+// general parameters for geometry
+
+Real bar_Y = 3.0 * 0.02667;	/**< length of the metal bar. */
+//Real bar_R = 0.006413;	/**< radius of the metal bar. */
+Real bar_R = 0.009;	/**< radius of the metal bar. */
+int resolution(20);
+Real resolution_ref = bar_R / 12;	  // particle spacing
+Real BW = resolution_ref * 10; // boundary width
+
 //----------------------------------------------------------------------
 //	Set the file path to the data file.
 //----------------------------------------------------------------------
-//std::string full_path_to_file = "./input/teapot274.stl";
-std::string full_path_to_file = "./input/column.stl";
+std::string full_path_to_file = "./input/columnNecking3.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Vec3d domain_lower_bound(-9.0, -6.0, 0.0);
-Vec3d domain_upper_bound(9.0, 6.0, 9.0);
+Vec3d domain_lower_bound(-bar_R - BW, -BW, -bar_R - BW);
+Vec3d domain_upper_bound(bar_R + BW, bar_Y + BW, bar_R + BW);
 Real dp_0 = (domain_upper_bound[0] - domain_lower_bound[0]) / 12.5;
 /** Domain bounds of the system. */
 BoundingBox system_domain_bounds(domain_lower_bound, domain_upper_bound);
@@ -42,7 +50,7 @@ int main()
 	//----------------------------------------------------------------------
 	//	Build up -- a SPHSystem
 	//----------------------------------------------------------------------
-	SPHSystem system(system_domain_bounds, dp_0);
+	SPHSystem system(system_domain_bounds, resolution_ref);
 	IOEnvironment io_environment(system);
 	//----------------------------------------------------------------------
 	//	Creating body, materials and particles.
@@ -71,6 +79,8 @@ int main()
 	/** A  Physics relaxation step. */
 	relax_dynamics::RelaxationStepInner relaxation_step_inner(imported_model_inner, true);
 	SimpleDynamics<relax_dynamics::UpdateSmoothingLengthRatioByShape> update_smoothing_length_ratio(imported_model);
+	/** Write the particle reload files. */
+	ReloadParticleIO write_particle_reload_files(io_environment, imported_model);
 	//----------------------------------------------------------------------
 	//	Particle relaxation starts here.
 	//----------------------------------------------------------------------
@@ -96,6 +106,7 @@ int main()
 		}
 	}
 	std::cout << "The physics relaxation process of imported model finish !" << std::endl;
-
+	/** Output results. */
+	write_particle_reload_files.writeToFile(0.0);
 	return 0;
 }

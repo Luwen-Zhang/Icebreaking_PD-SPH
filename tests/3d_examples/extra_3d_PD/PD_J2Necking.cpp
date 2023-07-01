@@ -13,10 +13,10 @@ Real bar_Y = 2.0 * 0.02667;	/**< length of the metal bar. */
 Real bar_R = 0.006413;	/**< radius of the metal bar. */
 int resolution(20);
 Real resolution_ref = bar_R / 12;	  // particle spacing
-Real BW = resolution_ref * 4; // boundary width
+Real BW = resolution_ref * 10; // boundary width
 
 Real gravity_g = 9.81;
-Real Load_vel = 50;
+Real Load_vel = 10;
 //----------------------------------------------------------------------
 //	Material parameters of the elastoplastic bar.
 //----------------------------------------------------------------------
@@ -65,17 +65,46 @@ public:
 			0.5 * BW, resolution, offet_bar);
 	}
 };
-class BarLoadingCondition
+class UpBarLoadingCondition
 	: public solid_dynamics::LoadBodyPartConstraint
 {
+protected:
+	Real V_;
 public:
-	explicit BarLoadingCondition(BodyPartByParticle& body_part)
-		: solid_dynamics::LoadBodyPartConstraint(body_part) {};
+	explicit UpBarLoadingCondition(BodyPartByParticle& body_part)
+		: solid_dynamics::LoadBodyPartConstraint(body_part),V_(0.0) {};
+
+	inline Real getVel(const Real& time)
+	{
+		//V_ = 8.75e4 * time;
+		V_ = 3.28e8 * time * time;
+		return V_;
+	}
+
+	void update(size_t index_i, Real dt)
+	{		
+		vel_[index_i][1] = V_;
+	};
+};
+class BottomBarLoadingCondition
+	: public solid_dynamics::LoadBodyPartConstraint
+{
+protected:
+	Real V_;
+public:
+	explicit BottomBarLoadingCondition(BodyPartByParticle& body_part)
+		: solid_dynamics::LoadBodyPartConstraint(body_part), V_(0.0) {};
+
+	inline Real getVel(const Real& time)
+	{
+		//V_ = -8.75e4 * time;
+		V_ = -3.28e8 * time * time;
+		return V_;
+	}
 
 	void update(size_t index_i, Real dt)
 	{
-		Real coff = 1.0;
-		vel_[index_i][1] = coff * Load_vel * sqrt(3.0);
+		vel_[index_i][1] = V_;
 	};
 };
 // the main program with commandline options
@@ -188,9 +217,11 @@ int main(int ac, char* av[])
 	/** Constrain the holder. */
 	BodyRegionByParticle holder(bar, makeShared<BarConstrainShape>("Holder"));
 	SimpleDynamics<solid_dynamics::FixBodyPartConstraint> constraint_holder(holder);
-	/** Constrain the loader. */
+	/** Constrain the up loader. */
 	BodyRegionByParticle loader(bar, makeShared<BarLoadingShape>("Loader"));
-	SimpleDynamics<BarLoadingCondition> constraint_loader(loader);
+	SimpleDynamics<UpBarLoadingCondition> constraint_loader_up(loader);
+	/** Constrain the bottom loader. */	
+	SimpleDynamics<BottomBarLoadingCondition> constraint_loader_bottom(holder);
 
 	std::string Logpath = io_environment.output_folder_ + "/SimLog.txt";
 	if (fs::exists(Logpath))
@@ -240,7 +271,7 @@ int main(int ac, char* av[])
 	size_t number_of_iterations_s = 0;
 	int screen_output_interval = 1;
 	int ite = 0;
-	Real end_time = 6e-5;
+	Real end_time = 4e-4;
 	Real output_interval = end_time / 100.0;
 	Real dt = 0.0;					// default acoustic time step sizes
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
@@ -280,15 +311,20 @@ int main(int ac, char* av[])
 					<< dt << "\n";
 			}
 			//initialize_a_solid_step.parallel_exec(dt);
-			constraint_loader.parallel_exec(dt);
-
+			//Loading
+			constraint_loader_up.getVel(GlobalStaticVariables::physical_time_);
+			constraint_loader_bottom.getVel(GlobalStaticVariables::physical_time_);
+			constraint_loader_up.parallel_exec(dt);
+			constraint_loader_bottom.parallel_exec(dt);
+			//Spatial Integration
 			NosbPD_firstStep.parallel_exec(dt);
 			NosbPD_secondStepPlastic.parallel_exec(dt);
-
+			//Spatial Numerical dissipation
 			hourglass_control.parallel_exec(dt);
 			numerical_damping.parallel_exec(dt);
-
+			
 			NosbPD_thirdStep.parallel_exec(dt);
+			//Time Numerical dissipation
 			cn1 = SMAX(TinyReal, computing_cn1.parallel_exec(dt));
 			cn2 = computing_cn2.parallel_exec(dt);
 			if (cn2 > TinyReal) {
@@ -297,12 +333,13 @@ int main(int ac, char* av[])
 			else {
 				ADR_cn = 0.0;
 			}
-			//ADR_cn = 0.01 * ADR_cn;
+			ADR_cn = 0.01 * ADR_cn;
 			NosbPD_fourthStepADR.getADRcn(ADR_cn);
+			//Time Integration
 			NosbPD_fourthStepADR.parallel_exec(dt);
 			//NosbPD_fourthStep.parallel_exec(dt);
 
-			constraint_holder.parallel_exec(dt);
+			//constraint_holder.parallel_exec(dt);
 			
 		}		
 		
