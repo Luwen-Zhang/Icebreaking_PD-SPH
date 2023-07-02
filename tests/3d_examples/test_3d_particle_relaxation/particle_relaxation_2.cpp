@@ -56,7 +56,7 @@ int main()
 	//	Creating body, materials and particles.
 	//----------------------------------------------------------------------
 	RealBody imported_model(system, makeShared<SolidBodyFromMesh>("SolidBodyFromMesh"));
-	imported_model.defineAdaptation<ParticleRefinementNearSurface>(1.15, 1.0, 1);
+	imported_model.defineAdaptation<ParticleRefinementNearSurface>(1.15, 1.0, 0);
 	imported_model.defineBodyLevelSetShape()->correctLevelSetSign()->writeLevelSet(io_environment);
 	imported_model.defineParticlesAndMaterial();
 	imported_model.generateParticles<ParticleGeneratorMultiResolution>();
@@ -84,16 +84,19 @@ int main()
 	//----------------------------------------------------------------------
 	//	Particle relaxation starts here.
 	//----------------------------------------------------------------------
+	write_imported_model_to_vtp.writeToFile(0);
 	random_imported_model_particles.parallel_exec(0.25);
 	relaxation_step_inner.SurfaceBounding().parallel_exec();
 	update_smoothing_length_ratio.parallel_exec();
-	write_imported_model_to_vtp.writeToFile();
+	write_imported_model_to_vtp.writeToFile(1);
 	imported_model.updateCellLinkedList();
 	cell_linked_list_recording.writeToFile(0);
 	//----------------------------------------------------------------------
 	//	Particle relaxation time stepping start here.
 	//----------------------------------------------------------------------
 	int ite_p = 0;
+	int ite_pf = 0;
+
 	while (ite_p < 1000)
 	{
 		update_smoothing_length_ratio.parallel_exec();
@@ -102,7 +105,8 @@ int main()
 		if (ite_p % 100 == 0)
 		{
 			std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the imported model N = " << ite_p << "\n";
-			write_imported_model_to_vtp.writeToFile(ite_p);
+			ite_pf = ite_p + 2;
+			write_imported_model_to_vtp.writeToFile(ite_pf);
 		}
 	}
 	std::cout << "The physics relaxation process of imported model finish !" << std::endl;

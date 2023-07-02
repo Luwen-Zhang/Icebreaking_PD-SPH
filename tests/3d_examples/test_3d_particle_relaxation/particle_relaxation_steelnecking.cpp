@@ -19,7 +19,7 @@ Real BW = resolution_ref * 10; // boundary width
 //----------------------------------------------------------------------
 //	Set the file path to the data file.
 //----------------------------------------------------------------------
-std::string full_path_to_file = "./input/steelnecking.stl";
+std::string full_path_to_file = "./input/columnNecking3.stl";
 //std::string full_path_to_file = "D:/SPHinXsys-master-build/tests/3d_examples/test_3d_particle_relaxation/bin/input/steelnecking.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
@@ -62,7 +62,7 @@ int main()
 	imported_model.defineParticlesAndMaterial();
 	//imported_model.generateParticles<ParticleGeneratorMultiResolution>();
 	imported_model.generateParticles<ParticleGeneratorLattice>();
-	imported_model.addBodyStateForRecording<Real>("SmoothingLengthRatio");
+	//imported_model.addBodyStateForRecording<Real>("SmoothingLengthRatio");
 
 	std::cout << "particle_generated" << "\n";
 	//----------------------------------------------------------------------
@@ -83,16 +83,17 @@ int main()
 	SimpleDynamics<RandomizeParticlePosition> random_imported_model_particles(imported_model);
 	/** A  Physics relaxation step. */
 	relax_dynamics::RelaxationStepInner relaxation_step_inner(imported_model_inner, true);
-	SimpleDynamics<relax_dynamics::UpdateSmoothingLengthRatioByShape> update_smoothing_length_ratio(imported_model);
+	//SimpleDynamics<relax_dynamics::UpdateSmoothingLengthRatioByShape> update_smoothing_length_ratio(imported_model);
 	
 	std::cout << "method defined" << "\n";
 	//----------------------------------------------------------------------
 	//	Particle relaxation starts here.
 	//----------------------------------------------------------------------
+	write_imported_model_to_vtp.writeToFile(0);
 	random_imported_model_particles.parallel_exec(0.25);
 	relaxation_step_inner.SurfaceBounding().parallel_exec();
 	//update_smoothing_length_ratio.parallel_exec();
-	write_imported_model_to_vtp.writeToFile();
+	write_imported_model_to_vtp.writeToFile(1);
 	//imported_model.updateCellLinkedList();
 	//cell_linked_list_recording.writeToFile(0);
 	 std::cout << "main loop starts" << "\n";
@@ -100,6 +101,7 @@ int main()
 	//	Particle relaxation time stepping start here.
 	//----------------------------------------------------------------------
 	int ite_p = 0;
+	int ite_pf = 0;
 	while (ite_p < 1000)
 	{
 		//update_smoothing_length_ratio.parallel_exec();
@@ -108,7 +110,8 @@ int main()
 		if (ite_p % 100 == 0)
 		{
 			std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the imported model N = " << ite_p << "\n";
-			write_imported_model_to_vtp.writeToFile(ite_p);
+			ite_pf = ite_p + 2;
+			write_imported_model_to_vtp.writeToFile(ite_pf);
 		}
 	}
 	std::cout << "The physics relaxation process of imported model finish !" << std::endl;
