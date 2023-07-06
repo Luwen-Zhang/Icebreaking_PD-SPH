@@ -82,7 +82,7 @@ namespace SPH
     void VonMisesStrain::update(size_t index_i, Real dt)
     {
         derived_variable_[index_i] = particles_->getVonMisesStrain(index_i);
-    }
+    }   
     //=============================================================================================//
     VonMisesStrainDynamic::VonMisesStrainDynamic(SPHBody &sph_body)
         : BaseDerivedVariable<Real>(sph_body, "VonMisesStrainDynamic"),

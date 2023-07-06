@@ -409,6 +409,7 @@ namespace SPH
 		//addVariableToWrite<Matd>("PlasticStrain");
 		addDerivedVariableToWrite<VonMisesStressforPD>();
 		addDerivedVariableToWrite<VonMisesPlasticStrainforPD>();
+		addDerivedVariableToWrite<GreenLagrangeStrain>();
 
 	}
 }

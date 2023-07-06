@@ -179,8 +179,7 @@ namespace SPH
 		explicit VonMisesStrain(SPHBody &sph_body);
 		virtual ~VonMisesStrain(){};
 		void update(size_t index_i, Real dt = 0.0);
-	};
-
+	};	
 	/**
 	 * @class VonMisesStrain
 	 * @brief update von Mises strain
