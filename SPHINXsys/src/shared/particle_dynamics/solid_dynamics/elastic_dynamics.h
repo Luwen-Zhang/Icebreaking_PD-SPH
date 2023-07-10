@@ -504,6 +504,29 @@ namespace SPH
 			Real max_shear_;
 		};
 		/**
+		* @Created by Haotian Shi from SJTU
+		* @class BondBreakByPlasticStrain
+		* @brief fracture criteria based on MAX plastic strain
+		*/
+		class BondBreakByPlasticStrain : public LocalDynamics, public NosbPDPlasticSolidDataInner
+		{
+		public:
+			explicit BondBreakByPlasticStrain(BaseInnerRelation& inner_relation, Real& cr_value);
+			virtual ~BondBreakByPlasticStrain() {};
+
+			virtual bool checkBondLive(Matd& EquivalentVar, Real& stretch_rate);
+
+			void interaction(size_t index_i, Real dt = 0.0);
+
+		protected:
+			Real critical_value_;
+			StdLargeVec<int>& particleLive_;
+			StdLargeVec<int>& bond_;
+			StdLargeVec<Real>& damage_;
+			StdLargeVec<Matd>& plastic_strain_;
+			StdLargeVec<Vecd>& pos_, & vel_, & acc_;
+		};
+		/**
 		 * @Created by Haotian Shi from SJTU
 		 * @class ADRFirstStep
 		 * @brief computing SUM(U^T * K * U) 

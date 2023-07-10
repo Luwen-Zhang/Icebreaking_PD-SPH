@@ -691,6 +691,55 @@ namespace SPH
 			}
 		}
 		//=================================================================================================//
+		BondBreakByPlasticStrain::
+			BondBreakByPlasticStrain(BaseInnerRelation& inner_relation, Real& cr_value)
+			: LocalDynamics(inner_relation.getSPHBody()), NosbPDPlasticSolidDataInner(inner_relation),
+			critical_value_(cr_value), particleLive_(particles_->particleLive_), bond_(particles_->bond_),
+			damage_(particles_->damage_), plastic_strain_(particles_->plastic_strain_),
+			pos_(particles_->pos_), vel_(particles_->vel_), acc_(particles_->acc_) {}
+		//=================================================================================================//
+		bool BondBreakByPlasticStrain::checkBondLive(Matd& plastic_strain_eq, Real& stretch_rate)
+		{
+			Real val_eq = plastic_strain_eq.eigenvalues().real().maxCoeff();
+			if (val_eq > critical_value_ || stretch_rate > 1.0) {
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
+		//=================================================================================================//
+		void BondBreakByPlasticStrain::interaction(size_t index_i, Real dt)
+		{
+			if (particleLive_[index_i] == 1) {
+
+				size_t bondcount = 0;
+
+				Neighborhood& inner_neighborhood = inner_configuration_[index_i];
+				for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+				{
+					size_t index_j = inner_neighborhood.j_[n];
+
+					//Vecd r_ij = -inner_neighborhood.r_ij_[n] * inner_neighborhood.e_ij_[n];
+					if (inner_neighborhood.bondLive_[n]) {
+
+						Vecd eta = pos_[index_j] - pos_[index_i];
+						Real stretchRate = (eta.norm() - inner_neighborhood.r_ij_[n]) / inner_neighborhood.r_ij_[n];
+						Matd plastic_strain_avg = (plastic_strain_[index_i] + plastic_strain_[index_j]) * 0.5;
+
+						inner_neighborhood.bondLive_[n] = checkBondLive(plastic_strain_avg, stretchRate);
+						if (inner_neighborhood.bondLive_[n]) bondcount++;
+					}
+				}
+				bond_[index_i] = bondcount;
+				damage_[index_i] = 1.0 - (1.0 * bondcount) / (1.0 * inner_neighborhood.current_size_);
+				if (bondcount < 1) {
+					particleLive_[index_i] = 0;					
+					std::cout << "Particle_index_i = " << index_i << " becomes a FREE Particle !" << "\n";
+				}
+			}
+		}
+		//=================================================================================================//
 		ADRFirstStep::ADRFirstStep(SPHBody& sph_body)
 			: LocalDynamicsReduce<Real, ReduceSum<Real>>(sph_body, Real(0.0)),
 			NosbPDSolidDataSimple(sph_body), pos0_(particles_->pos0_), pos_(particles_->pos_),
