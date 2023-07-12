@@ -157,7 +157,7 @@ namespace SPH
 			Real isotropic_hardening_modulus = 0.0, Real kinematic_hardening_modulus = 0.0)
 			: PlasticSolidforPD(rho0, youngs_modulus, poisson_ratio, yield_stress, 
 				isotropic_hardening_modulus, kinematic_hardening_modulus), 
-			sigmaY_infinite_(0.715e9), sigmaY_0_(yield_stress), index_kesi_(16.93)
+			sigmaY_infinite_(1.589 * yield_stress), sigmaY_0_(yield_stress), index_kesi_(16.93)
 		{
 			material_type_name_ = "J2PlasticityforPD";
 		};
@@ -201,7 +201,7 @@ namespace SPH
 			Real isotropic_hardening_modulus = 0.0, Real kinematic_hardening_modulus = 0.0)
 			: PlasticSolidforPD(rho0, youngs_modulus, poisson_ratio, yield_stress,
 				isotropic_hardening_modulus, kinematic_hardening_modulus), cohesive_0_(yield_stress), phi_0_(friction_angle),
-			sigmaY_infinite_(0.715e9), sigmaY_0_(yield_stress), index_kesi_(16.93)
+			sigmaY_infinite_(1.589 * yield_stress), sigmaY_0_(yield_stress), index_kesi_(16.93)
 		{
 			material_type_name_ = "DruckerPragerPlasticityforPD";
 			//

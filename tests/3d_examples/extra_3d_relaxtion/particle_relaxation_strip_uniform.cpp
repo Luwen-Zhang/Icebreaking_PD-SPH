@@ -11,16 +11,16 @@ using namespace SPH;
 
 // general parameters for geometry
 
-Real strip_Y = 0.018;	/**< 0.5 length of the strip. */
-Real strip_X = 0.01;	/**< 0.5 width of the strip. */
-Real strip_Z = 0.0005;	/**< 0.5 thickness of the strip. */
+Real strip_Y = 0.03;	/**< 0.5 length of the strip. */
+Real strip_X = 0.015;	/**< 0.5 width of the strip. */
+Real strip_Z = 0.015;	/**< 0.5 thickness of the strip. */
 int resolution(20);
-Real resolution_ref = strip_Z / 2;	  // particle spacing
+Real resolution_ref = 8e-4;	  // particle spacing
 Real BW = resolution_ref * 4; // boundary width
 //----------------------------------------------------------------------
 //	Set the file path to the data file.
 //----------------------------------------------------------------------
-std::string full_path_to_file = "./input/strip1.stl";
+std::string full_path_to_file = "./input/NeckBar.stl";
 //std::string full_path_to_file = "D:/SPHinXsys-master-build/tests/3d_examples/test_3d_particle_relaxation/bin/input/steelnecking.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.

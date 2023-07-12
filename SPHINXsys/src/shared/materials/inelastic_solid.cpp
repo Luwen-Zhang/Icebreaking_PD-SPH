@@ -123,6 +123,11 @@ namespace SPH
 		return trial_sigma;
 	}
 	//=================================================================================================//
+	Real DruckerPragerPlasticityforPD::YieldFunc(const Matd& stress, const Real& iso_q, const Matd& kin_q)
+	{
+		return 0;
+	}
+	//=================================================================================================//
 	Matd DruckerPragerPlasticityforPD::PlasticConstitutiveRelation(const Matd& G, const Matd& stress_old, Matd& epsilon_p, size_t index_i, Real dt)
 	{
 		/** Hughes-Winget incremental objectivity **/
@@ -145,8 +150,8 @@ namespace SPH
 		//Calculate Hardening variables, hardening in "k" level
 		Real trial_isoHardening_q = IsoHardeningFunc(trial_isoHardening_ISV1);	
 		//intermediate variables		
-		Real norm1 = trial_sigma.trace() * OneOverDimensions;
-		Matd dev_sigma = trial_sigma - norm1 * Matd::Identity();
+		Real norm1 = trial_sigma.trace();
+		Matd dev_sigma = trial_sigma - norm1 * OneOverDimensions * Matd::Identity();
 		Real dev_sigma_norm = dev_sigma.norm();
 
 		/** Yield Function **/		
@@ -163,7 +168,7 @@ namespace SPH
 			Matd eta = dev_sigma / dev_sigma_norm;
 			Matd flow_direction = alpha_phi_* Matd::Identity() + eta / sqrt2;
 			//update cauchy stress			
-			trial_sigma -= (3 * K0_ * alpha_phi_ * Matd::Identity() + sqrt2 * G0_ * eta);
+			trial_sigma -= relax_increment * (3 * K0_ * alpha_phi_ * Matd::Identity() + sqrt2 * G0_ * eta);
 			//update plastic strain
 			trial_epsilon_p += relax_increment * flow_direction;
 			//update the ISVs
