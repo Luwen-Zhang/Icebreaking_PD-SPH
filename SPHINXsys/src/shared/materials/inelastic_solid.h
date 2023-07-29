@@ -186,10 +186,8 @@ namespace SPH
 	protected:
 		//
 		const Real sqrt2 = sqrt(2);
-		const Real phi_0_;
 		Real alpha_phi_;
-		Real k_phi_;
-		const Real cohesive_0_;
+		Real k_phi_;		
 		//Parameter for Saturation-typed hardening function
 		Real sigmaY_infinite_;
 		Real sigmaY_0_;
@@ -197,16 +195,14 @@ namespace SPH
 
 	public:
 		/** Constructor */
-		explicit DruckerPragerPlasticityforPD(Real rho0, Real youngs_modulus, Real poisson_ratio, Real yield_stress, Real friction_angle,
+		explicit DruckerPragerPlasticityforPD(Real rho0, Real youngs_modulus, Real poisson_ratio, Real yield_stress, Real alpha_phi,
 			Real isotropic_hardening_modulus = 0.0, Real kinematic_hardening_modulus = 0.0)
 			: PlasticSolidforPD(rho0, youngs_modulus, poisson_ratio, yield_stress,
-				isotropic_hardening_modulus, kinematic_hardening_modulus), cohesive_0_(yield_stress), phi_0_(friction_angle),
+				isotropic_hardening_modulus, kinematic_hardening_modulus), k_phi_(yield_stress), alpha_phi_(alpha_phi),
 			sigmaY_infinite_(1.589 * yield_stress), sigmaY_0_(yield_stress), index_kesi_(16.93)
 		{
 			material_type_name_ = "DruckerPragerPlasticityforPD";
-			//
-			alpha_phi_ = sin(phi_0_) / 3;
-			k_phi_ = cos(phi_0_) * cohesive_0_;
+			
 		};
 		virtual ~DruckerPragerPlasticityforPD() {};
 

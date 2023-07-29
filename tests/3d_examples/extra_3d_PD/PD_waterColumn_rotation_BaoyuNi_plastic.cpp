@@ -35,8 +35,10 @@ Real rho0_s = 900.0;	 /**< Reference density of plate. */
 Real poisson = 0.33; /**< Poisson ratio. */
 Real Youngs_modulus = 6.2e9;
 //Real critical_stress = 8.436e8;
-Real max_tension_stress = 2.2e6;
+Real max_tension_stress = 100 * 2.2e6;
 Real max_shear_stress = 1.7e6;
+Real max_plastic_strain = 0.001;
+Real max_stretch = 3.876e-4;
 //Damage parameters
 Real sigma_t0 = 2.2e6;
 Real sigma_c0 = 9.4e6;
@@ -45,7 +47,8 @@ Real sigma_Y0 = sigma_t0;
 //Hardening parameters for DP
 Real AA = sqrt(3) * (sigma_c0 - sigma_t0) / (sigma_c0 + sigma_t0);
 Real friction_angle = 0.8;
-Real cohesive0 = 2.0 / sqrt(3) * (sigma_c0 * sigma_t0) / (sigma_c0 + sigma_t0) / cos(friction_angle);
+//Real cohesive0 = 2.0 / sqrt(3) * (sigma_c0 * sigma_t0) / (sigma_c0 + sigma_t0) / cos(friction_angle);
+Real cohesive0 = max_shear_stress / cos(friction_angle);
 //Shared hardening parameters
 Real isohardening_modulus_H = 0.001 * Youngs_modulus;
 Real kinhardening_modulus_H = 0.0;
@@ -252,9 +255,12 @@ int main(int ac, char *av[])
 	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD>
 		numerical_damping(plate_inner_relation, plate.sph_adaptation_->getKernel());
 	//breaking bonds based on the MAX principal stress criteria
-	InteractionDynamics<solid_dynamics::BondBreakBySigma1andSigma3> check_bondLive(plate_inner_relation, max_tension_stress, max_shear_stress);
+	//InteractionDynamics<solid_dynamics::BondBreakBySigma1andSigma3> check_bondLive(plate_inner_relation, max_tension_stress, max_shear_stress);
 	//InteractionDynamics<solid_dynamics::BondBreakByPrinStress> check_bondLive(plate_inner_relation, max_tension_stress);
+	InteractionDynamics<solid_dynamics::BondBreakByPrinStress> check_bondLive(plate_inner_relation, max_tension_stress);
 		
+	//InteractionDynamics<solid_dynamics::BondBreakByPlasticStrain> check_bondLive(plate_inner_relation, max_plastic_strain);
+
 	SimpleDynamics<solid_dynamics::UpdateElasticNormalDirection> plate_update_normal(plate);
 	//----------------------------------------------------------------------
 	//	Define the methods for I/O operations, observations
@@ -383,7 +389,7 @@ int main(int ac, char *av[])
 					NosbPD_firstStep.parallel_exec(dt_s);
 					check_bondLive.parallel_exec(dt_s);
 					//NosbPD_secondStep.parallel_exec(dt_s);
-					NosbPD_secondStepPlastic.parallel_exec();
+					NosbPD_secondStepPlastic.parallel_exec(dt_s);
 
 					hourglass_control.parallel_exec(dt_s);
 					numerical_damping.parallel_exec(dt_s);

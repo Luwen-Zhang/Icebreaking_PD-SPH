@@ -627,7 +627,7 @@ namespace SPH
 		bool BondBreakByPrinStress::checkBondLive(Matd& stress_eq, Real& stretch_rate)
 		{
 			Real val_eq = stress_eq.eigenvalues().real().maxCoeff();
-			if (val_eq > critical_value_ || stretch_rate > 0.5) {
+			if (val_eq > critical_value_ || stretch_rate > 3.876e-4) {
 				return false;
 			}
 			else {
