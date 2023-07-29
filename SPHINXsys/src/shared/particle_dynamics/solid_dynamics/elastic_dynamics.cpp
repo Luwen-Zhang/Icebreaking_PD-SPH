@@ -627,7 +627,7 @@ namespace SPH
 		bool BondBreakByPrinStress::checkBondLive(Matd& stress_eq, Real& stretch_rate)
 		{
 			Real val_eq = stress_eq.eigenvalues().real().maxCoeff();
-			if (val_eq > critical_value_ || stretch_rate > 3.876e-4) {
+			if (val_eq > critical_value_ || stretch_rate > 0.5) {
 				return false;
 			}
 			else {
@@ -684,6 +684,26 @@ namespace SPH
 			Real max_shear = (sigma1 - sigma3) / 2;
 
 			if (sigma1 > max_tension_ || max_shear > max_shear_ || stretch_rate > 0.5) {
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
+		//=================================================================================================//
+		BondBreakBySigma1andNorm1::
+			BondBreakBySigma1andNorm1(BaseInnerRelation& inner_relation, Real& cr_value1, Real& cr_value2)
+			: BondBreakByPrinStress(inner_relation, cr_value1) {
+			max_tension_ = cr_value1;
+			max_pressure_ = cr_value2;
+		}
+		//=================================================================================================//
+		bool BondBreakBySigma1andNorm1::checkBondLive(Matd& stress_eq, Real& stretch_rate)
+		{			
+			Real sigma1 = stress_eq.eigenvalues().real().maxCoeff();
+			Real pressure = -OneOverDimensions * stress_eq.trace();			
+
+			if (sigma1 > max_tension_ || pressure > max_pressure_ || stretch_rate > 0.5) {
 				return false;
 			}
 			else {

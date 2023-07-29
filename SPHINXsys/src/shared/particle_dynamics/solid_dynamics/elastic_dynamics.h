@@ -505,6 +505,23 @@ namespace SPH
 		};
 		/**
 		* @Created by Haotian Shi from SJTU
+		* @class BondBreakBySigma1andNorm1
+		* @brief fracture criteria based on MAX principal stress and MAX shear stress
+		*/
+		class BondBreakBySigma1andNorm1 : public BondBreakByPrinStress
+		{
+		public:
+			explicit BondBreakBySigma1andNorm1(BaseInnerRelation& inner_relation, Real& cr_value1, Real& cr_value2);
+			virtual ~BondBreakBySigma1andNorm1() {};
+
+			virtual bool checkBondLive(Matd& stress_eq, Real& stretch_rate) override;
+
+		protected:
+			Real max_tension_;
+			Real max_pressure_;
+		};
+		/**
+		* @Created by Haotian Shi from SJTU
 		* @class BondBreakByPlasticStrain
 		* @brief fracture criteria based on MAX plastic strain
 		*/

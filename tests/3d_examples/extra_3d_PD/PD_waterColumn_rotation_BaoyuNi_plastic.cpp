@@ -34,23 +34,23 @@ Real k_f = 0.0;
 Real rho0_s = 900.0;	 /**< Reference density of plate. */
 Real poisson = 0.33; /**< Poisson ratio. */
 Real Youngs_modulus = 6.2e9;
-//Real critical_stress = 8.436e8;
-Real max_tension_stress = 100 * 2.2e6;
-Real max_shear_stress = 1.7e6;
-Real max_plastic_strain = 0.001;
-Real max_stretch = 3.876e-4;
-//Damage parameters
 Real sigma_t0 = 2.2e6;
-Real sigma_c0 = 9.4e6;
+//Real sigma_c0 = 9.4e6 * 3;
+Real epsilon_rate = U_f / plate_Y;
+Real sigma_c0 = 10.976e6 * pow(epsilon_rate, 0.093783);
+//Damage parameters
+Real max_tension_stress = sigma_t0 ;
+Real max_pressure = sigma_c0 ;
+Real max_shear_stress = 1.7e6;
+Real max_plastic_strain = 0.0035;
+Real max_stretch = 3.876e-4;
 //Hardening parameters for J2
 Real sigma_Y0 = sigma_t0;
 //Hardening parameters for DP
-Real AA = sqrt(3) * (sigma_c0 - sigma_t0) / (sigma_c0 + sigma_t0);
-Real friction_angle = 0.8;
-//Real cohesive0 = 2.0 / sqrt(3) * (sigma_c0 * sigma_t0) / (sigma_c0 + sigma_t0) / cos(friction_angle);
-Real cohesive0 = max_shear_stress / cos(friction_angle);
+Real alpha = (sigma_c0 - sigma_t0) / (sigma_c0 + sigma_t0) / sqrt(3);
+Real flow_stress = (2.0 * sigma_c0 * sigma_t0) / (sigma_c0 + sigma_t0) / sqrt(3);
 //Shared hardening parameters
-Real isohardening_modulus_H = 0.001 * Youngs_modulus;
+Real isohardening_modulus_H = 6.89e6;
 Real kinhardening_modulus_H = 0.0;
 //	define the water block shape
 class WaterBlock : public ComplexShape
@@ -150,7 +150,7 @@ int main(int ac, char *av[])
 	plate.defineBodyLevelSetShape()->writeLevelSet(io_environment);
 	//plate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	plate.defineParticlesAndMaterial<NosbPDPlasticParticles, DruckerPragerPlasticityforPD>(rho0_s, Youngs_modulus, poisson,
-		cohesive0, friction_angle, isohardening_modulus_H, kinhardening_modulus_H);
+		flow_stress, alpha, isohardening_modulus_H, kinhardening_modulus_H);
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
 		? plate.generateParticles<ParticleGeneratorReload>(io_environment, plate.getName())
 		: plate.generateParticles<ParticleGeneratorLattice>();
@@ -257,8 +257,7 @@ int main(int ac, char *av[])
 	//breaking bonds based on the MAX principal stress criteria
 	//InteractionDynamics<solid_dynamics::BondBreakBySigma1andSigma3> check_bondLive(plate_inner_relation, max_tension_stress, max_shear_stress);
 	//InteractionDynamics<solid_dynamics::BondBreakByPrinStress> check_bondLive(plate_inner_relation, max_tension_stress);
-	InteractionDynamics<solid_dynamics::BondBreakByPrinStress> check_bondLive(plate_inner_relation, max_tension_stress);
-		
+	InteractionDynamics<solid_dynamics::BondBreakBySigma1andNorm1> check_bondLive(plate_inner_relation, max_tension_stress, max_pressure);		
 	//InteractionDynamics<solid_dynamics::BondBreakByPlasticStrain> check_bondLive(plate_inner_relation, max_plastic_strain);
 
 	SimpleDynamics<solid_dynamics::UpdateElasticNormalDirection> plate_update_normal(plate);
@@ -341,8 +340,8 @@ int main(int ac, char *av[])
 	size_t number_of_iterations = system.RestartStep();
 	size_t number_of_iterations_s = 0;
 	int screen_output_interval = 1;
-	Real end_time = 0.5e-3;
-	Real output_interval = end_time / 100.0;
+	Real end_time = 0.75e-3;
+	Real output_interval = end_time / 150.0;
 	Real dt = 0.0;					// default acoustic time step sizes
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
 	//Real dt_s_0 = plate_computing_time_step_size.parallel_exec();
