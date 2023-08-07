@@ -22,7 +22,8 @@ Real BW = resolution_ref * 3; // boundary width
 
 // for material properties of the fluid
 Real rho0_f = 1000.0;
-Real gravity_g = 9.81;
+//Real gravity_g = 9.81;
+Real gravity_g = 0.0;
 Real U_f = 73.81;
 //Real c_f = 10.0 * U_f;
 Real c_f = SMIN(10.0 * U_f, 1580.0);
@@ -43,16 +44,16 @@ Real sigma_Y0 = sigma_t0;
 //Hardening parameters for DP
 //Real alpha = (sigma_c0 - sigma_t0) / (sigma_c0 + sigma_t0) / sqrt(3);
 //Real flow_stress = (2.0 * sigma_c0 * sigma_t0) / (sigma_c0 + sigma_t0) / sqrt(3);
-Real alpha = 0.3333 / sqrt(3);
-Real flow_stress = 3.0e6 / sqrt(3);
+Real alpha = 0.4423 / sqrt(3);
+Real flow_stress = 1.3e6 / sqrt(3);
 //Shared hardening parameters
 Real isohardening_modulus_H = 6.89e6;
 Real kinhardening_modulus_H = 0.0;
 //Damage parameters
 //Real max_tension_stress = SMAX(sigma_t0, flow_stress / alpha / 3);
-Real max_tension_stress = 2.2e6;
+Real max_tension_stress = 0.7e6;
 Real max_pressure = sigma_c0 ;
-Real max_shear_stress = 6.6e6;
+Real max_shear_stress = 4.0e6;
 Real max_plastic_strain = 0.0035;
 Real max_stretch = 3.876e-4;
 
