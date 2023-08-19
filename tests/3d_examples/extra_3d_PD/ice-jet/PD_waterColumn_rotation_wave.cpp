@@ -9,22 +9,22 @@ using namespace SPH;
 
 // general parameters for geometry
 
-Real LR = 0.0036;				  // liquid column radius in XZ
-Real LH = 12 * LR;				  // liquid column height in Y
-Real inner_circle_radius = LR;
+Real LR = 0.002;				  // liquid column radius in XZ
+Real LH = 0.04428;				  // liquid column height in Y
+
 int resolution(20);
 
-Real plate_Y = 0.0055;				/**< thickness of the ice plate. */
-Real plate_R = 0.0575;	/**< width of the ice plate. */
+Real plate_Y = 0.01;				/**< thickness of the ice plate. */
+Real plate_R = 0.02;	/**< width of the ice plate. */
 
-Real resolution_ref = LR / 4;	  // particle spacing
-Real BW = resolution_ref * 3; // boundary width
-
+Real resolution_ref = 5e-4;	  // particle spacing
+Real BW = resolution_ref * 2; // boundary width
+Real inner_circle_radius = LR;
 // for material properties of the fluid
 Real rho0_f = 1000.0;
 //Real gravity_g = 9.81;
 Real gravity_g = 0.0;
-Real U_f = 48.24;
+Real U_f = 50.34;
 //Real c_f = 10.0 * U_f;
 Real c_f = SMIN(10.0 * U_f, 1580.0);
 Real mu_f = 0.0;
@@ -44,8 +44,8 @@ Real sigma_Y0 = sigma_t0;
 //Hardening parameters for DP
 //Real alpha = (sigma_c0 - sigma_t0) / (sigma_c0 + sigma_t0) / sqrt(3);
 //Real flow_stress = (2.0 * sigma_c0 * sigma_t0) / (sigma_c0 + sigma_t0) / sqrt(3);
-Real alpha = 0.4423 / sqrt(3);
-Real flow_stress = 1.3e6 / sqrt(3);
+Real alpha = 0.3333 / sqrt(3);
+Real flow_stress = 1.1e6 / sqrt(3);
 //Shared hardening parameters
 Real isohardening_modulus_H = 6.89e6;
 Real kinhardening_modulus_H = 0.0;
@@ -53,7 +53,7 @@ Real kinhardening_modulus_H = 0.0;
 //Real max_tension_stress = SMAX(sigma_t0, flow_stress / alpha / 3);
 Real max_tension_stress = 0.7e6;
 Real max_pressure = sigma_c0 ;
-Real max_shear_stress = 4.0e6;
+Real max_shear_stress = 7.0e6;
 Real max_plastic_strain = 0.0035;
 Real max_stretch = 3.876e-4;
 
@@ -63,7 +63,7 @@ class WaterBlock : public ComplexShape
 public:
 	explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
 	{		
-		Vecd translation_column(0.0, 1.5 * LH - 0.006, 0);
+		Vecd translation_column(0.0, 1.5 * LH, 0);
 		add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0, 1.0, 0), inner_circle_radius,
 			0.5 * LH, resolution, translation_column);
 	}
@@ -75,7 +75,7 @@ class PlateShape : public ComplexShape
 public:
 	explicit PlateShape(const std::string& shape_name) : ComplexShape(shape_name)
 	{
-		Vecd offet_plate(0.0, LH - 0.5 * plate_Y - 0.5 * BW, 0.0);		
+		Vecd offet_plate(0.0, LH - 0.5 * plate_Y - 2.0 * resolution_ref, 0.0);
 		add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0, 1.0, 0), plate_R,
 			0.5 * plate_Y, resolution, offet_plate);
 	}
@@ -181,7 +181,9 @@ int main(int ac, char *av[])
 	size_t particle_num_w = 0;
 
 	PDBody plate(system, makeShared<PlateShape>("PDBody"));
+	//plate.defineAdaptationRatios(1.5075, 0.8);
 	//SolidBody plate(system, makeShared<PlateShape>("SPHBody"));
+	//plate.defineAdaptationRatios(1.15, 0.8);
 	plate.defineBodyLevelSetShape()->writeLevelSet(io_environment);
 	//plate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	plate.defineParticlesAndMaterial<NosbPDPlasticParticles, DruckerPragerPlasticityforPD>(rho0_s, Youngs_modulus, poisson,
@@ -245,6 +247,7 @@ int main(int ac, char *av[])
 		std::cout << "The physics relaxation process of cylinder body finish !" << std::endl;
 		/** Output results. */
 		write_particle_reload_files.writeToFile(0.0);
+		write_water_block_states.writeToFile(1200);
 		return 0;
 	}
 	//----------------------------------------------------------------------
@@ -290,8 +293,8 @@ int main(int ac, char *av[])
 	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD>
 		numerical_damping(plate_inner_relation, plate.sph_adaptation_->getKernel());
 	//breaking bonds based on the MAX principal stress criteria
-	InteractionDynamics<solid_dynamics::BondBreakBySigma1andSigma3> check_bondLive(plate_inner_relation, max_tension_stress, max_shear_stress);
-	//InteractionDynamics<solid_dynamics::BondBreakByPrinStress> check_bondLive(plate_inner_relation, max_tension_stress);
+	//InteractionDynamics<solid_dynamics::BondBreakBySigma1andSigma3> check_bondLive(plate_inner_relation, max_tension_stress, max_shear_stress);
+	InteractionDynamics<solid_dynamics::BondBreakByPrinStress> check_bondLive(plate_inner_relation, max_tension_stress);
 	//InteractionDynamics<solid_dynamics::BondBreakBySigma1andNorm1> check_bondLive(plate_inner_relation, max_tension_stress, max_pressure);		
 	//InteractionDynamics<solid_dynamics::BondBreakByPlasticStrain> check_bondLive(plate_inner_relation, max_plastic_strain);
 
@@ -391,8 +394,9 @@ int main(int ac, char *av[])
 	size_t number_of_iterations = system.RestartStep();
 	size_t number_of_iterations_s = 0;
 	int screen_output_interval = 1;
-	Real end_time = 0.6e-3;
-	Real output_interval = end_time / 100.0;
+	int screen_output_interval_s = 10;
+	Real end_time = 0.4e-4;
+	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					// default acoustic time step sizes
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
 	//Real dt_s_0 = plate_computing_time_step_size.parallel_exec();
@@ -437,7 +441,7 @@ int main(int ac, char *av[])
 					if (dt - dt_s_sum < dt_s) dt_s = dt - dt_s_sum;					
 
 					NosbPD_firstStep.parallel_exec(dt_s);
-					check_bondLive.parallel_exec(dt_s);
+					//check_bondLive.parallel_exec(dt_s);
 					//NosbPD_secondStep.parallel_exec(dt_s);
 					NosbPD_secondStepPlastic.parallel_exec(dt_s);
 
@@ -449,13 +453,18 @@ int main(int ac, char *av[])
 					NosbPD_fourthStep.parallel_exec(dt_s);					
 
 					dt_s_sum += dt_s;
-					/*if (number_of_iterations_s % screen_output_interval == 0)
+					if (number_of_iterations_s % screen_output_interval_s == 0)
 					{
-						std::cout << std::fixed << std::setprecision(9) 
+						/*std::cout << std::fixed << std::setprecision(9) 
 							<< "		N_s=" << number_of_iterations_s 
-							<< "	dt_s = " << dt_s << "\n";
+							<< "	dt_s = " << dt_s << "\n";*/
+						tick_count t2 = tick_count::now();
+						write_water_block_states.writeToFile();
+						time_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "\n";
+						tick_count t3 = tick_count::now();
+						interval += t3 - t2;
 					}
-					number_of_iterations_s++;*/
+					number_of_iterations_s++;
 				}
 				average_velocity_and_acceleration.update_averages_.parallel_exec(dt);
 				dt = get_fluid_time_step_size.parallel_exec();
@@ -492,11 +501,11 @@ int main(int ac, char *av[])
 
 		//write_water_mechanical_energy.writeToFile(number_of_iterations);
 
-		tick_count t2 = tick_count::now();
+		/*tick_count t2 = tick_count::now();
 		write_water_block_states.writeToFile();
 		time_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "\n";
 		tick_count t3 = tick_count::now();
-		interval += t3 - t2;
+		interval += t3 - t2;*/
 	}
 	tick_count t4 = tick_count::now();
 
