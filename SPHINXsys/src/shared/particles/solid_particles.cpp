@@ -387,6 +387,7 @@ namespace SPH
 		//addVariableToWrite<Matd>("shapeK");
 		//addVariableToWrite<Matd>("shapeK_1");
 		addVariableToWrite<Matd>("CauchyStress");
+		//addDerivedVariableToWrite<VonMisesStressforPD>();
 				
 	}
 	//=================================================================================================//

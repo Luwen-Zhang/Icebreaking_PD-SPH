@@ -437,6 +437,8 @@ namespace SPH
 			virtual ~PairNumericalDampingforPD() {};
 			void interaction(size_t index_i, Real dt = 0.0);
 
+			void setfactor(Real factor) { numerical_dissipation_factor_ = factor; };
+
 		protected:
 			ElasticSolid& elastic_solid_;
 			Real rho0_, c0_;

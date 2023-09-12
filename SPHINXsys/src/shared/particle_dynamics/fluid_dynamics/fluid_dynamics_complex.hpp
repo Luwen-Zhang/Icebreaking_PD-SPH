@@ -182,10 +182,10 @@ namespace SPH
 					Real r_ij = wall_neighborhood.r_ij_[n];
 
 					Real face_wall_external_acceleration = (acc_prior_i - acc_ave_k[index_j]).dot(-e_ij);
-					//Real p_in_wall = this->p_[index_i] + this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
+					Real p_in_wall = this->p_[index_i] + this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
 					//Real p_in_wall = SMAX(this->p_[index_i], 0.0) + this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
-					Real p_in_wall = SMAX(this->p_[index_i], -3.0 * this->p_[index_i])
-						+ this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
+					//Real p_in_wall = SMAX(this->p_[index_i], -3.0 * this->p_[index_i])
+						//+ this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);
 
 					/*Real p_in_wall = fabs(this->p_[index_i])
 						+ this->rho_[index_i] * r_ij * SMAX(0.0, face_wall_external_acceleration);*/
