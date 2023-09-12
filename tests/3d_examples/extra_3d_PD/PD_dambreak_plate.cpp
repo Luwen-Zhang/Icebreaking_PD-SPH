@@ -118,6 +118,7 @@ int main(int ac, char *av[])
 	size_t particle_num_w = wall_boundary.getBaseParticles().total_real_particles_;
 
 	PDBody plate(system, makeShared<PlateShape>("PDBody"));
+	plate.defineAdaptationRatios(1.5075, 2.0);
 	plate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	plate.generateParticles<ParticleGeneratorLattice>();
 	size_t particle_num_s = plate.getBaseParticles().total_real_particles_;
@@ -153,7 +154,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 	SimpleDynamics<NormalDirectionFromBodyShape> plate_normal_direction(plate);
-	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluid> fluid_pressure_force_on_plate(plate_water_contact_relation);
+	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluidforPD> fluid_pressure_force_on_plate(plate_water_contact_relation);
 	solid_dynamics::AverageVelocityAndAcceleration average_velocity_and_acceleration(plate);
 	//----------------------------------------------------------------------
 	//	Algorithms of Elastic dynamics.
@@ -173,7 +174,7 @@ int main(int ac, char *av[])
 	//Numerical Damping
 	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD>
 		numerical_damping(plate_inner_relation, plate.sph_adaptation_->getKernel());
-
+	numerical_damping.setfactor(1.0);
 	/** Constrain the holder. */
 	BodyRegionByParticle holder(plate,
 		makeShared<TransformShape<GeometricShapeBox>>(Transformd(translation_holder), halfsize_holder, "Holder"));
@@ -246,11 +247,12 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 10;
-	Real end_time = 0.2;
-	Real output_interval = end_time / 100.0;
+	Real end_time = 1.0;
+	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					// default acoustic time step sizes
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
-	Real dt_s_0 = plate_computing_time_step_size.parallel_exec();
+	//Real dt_s_0 = plate_computing_time_step_size.parallel_exec();
+	Real dt_s_0 = 5e-5;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
