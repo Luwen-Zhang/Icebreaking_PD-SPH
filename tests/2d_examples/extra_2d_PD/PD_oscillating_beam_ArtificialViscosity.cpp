@@ -15,7 +15,7 @@ Real PL = 0.2;	// beam length
 Real PH = 0.02; // for thick plate; =0.01 for thin plate
 Real SL = 0.06; // depth of the insert
 // reference particle spacing
-Real resolution_ref = PH / 10.0;
+Real resolution_ref = PH / 20.0;
 Real BW = resolution_ref * 4; // boundary width, at least three particles
 /** Domain bounds of the system. */
 BoundingBox system_domain_bounds(Vec2d(-SL - BW, -PL / 2.0),
@@ -195,7 +195,7 @@ int main(int ac, char *av[])
 	//	Setup computing time-step controls.
 	//----------------------------------------------------------------------
 	int ite = 0;
-	Real T0 = 1.0;
+	Real T0 = 0.01;
 	Real end_time = T0;
 	// time step size for output file
 	Real output_interval = 0.01 * T0;

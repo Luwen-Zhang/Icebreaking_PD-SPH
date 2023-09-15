@@ -16,9 +16,9 @@ Real Dam_L = 0.146; 								/**< Dam width. */
 Real Dam_H = 2.0 * Dam_L; 								/**< Dam height. */
 Real Rubber_width = 0.012;							/**< Width of the rubber plate. */
 Real Rubber_height = 20 / 3 * Rubber_width;			/**< Height of the rubber plate. */
-Real Base_bottom_position = 0.0;					/**< Position of plate base. (In Y direction) */
 Real resolution_ref = Rubber_width / 12.0; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4.0;			/**< Extending width for BCs. */
+Real Base_bottom_position = -1.0 * BW;					/**< Position of plate base. (In Y direction) */
 /** The offset that the rubber plate shifted above the tank. */
 Real dp_s = 0.5 * resolution_ref;
 Vec2d offset = Vec2d(0.0, Base_bottom_position - floor(Base_bottom_position / dp_s) * dp_s);
@@ -34,15 +34,15 @@ Vec2d DamP_rb(Dam_L, 0.0); 				/**< Right bottom. */
 /**
  * @brief 	Define the corner point of plate geomerty.
  */
-Vec2d PlateP_lb(2.0 * Dam_L, 0.0); 					/**< Left bottom. */
+Vec2d PlateP_lb(2.0 * Dam_L, Base_bottom_position); 					/**< Left bottom. */
 Vec2d PlateP_lt(2.0 * Dam_L, Rubber_height); 	/**< Left top. */
 Vec2d PlateP_rt(2.0 * Dam_L + Rubber_width, Rubber_height); 					/**< Right top. */
-Vec2d PlateP_rb(2.0 * Dam_L + Rubber_width, 0.0); 									/**< Right bottom. */
+Vec2d PlateP_rb(2.0 * Dam_L + Rubber_width, Base_bottom_position); 									/**< Right bottom. */
 /** Define the corner points of the plate constrain. */
-Vec2d ConstrainP_lb(2.0 * Dam_L, 0.0);				 /**< Left bottom. */
-Vec2d ConstrainP_lt(2.0 * Dam_L, BW);				 /**< Left top. */
-Vec2d ConstrainP_rt(2.0 * Dam_L + Rubber_width, BW); /**< Right top. */
-Vec2d ConstrainP_rb(2.0 * Dam_L + Rubber_width, 0.0);/**< Right bottom. */
+Vec2d ConstrainP_lb(2.0 * Dam_L, Base_bottom_position);				 /**< Left bottom. */
+Vec2d ConstrainP_lt(2.0 * Dam_L, 0.0);				 /**< Left top. */
+Vec2d ConstrainP_rt(2.0 * Dam_L + Rubber_width, 0.0); /**< Right top. */
+Vec2d ConstrainP_rb(2.0 * Dam_L + Rubber_width, Base_bottom_position);/**< Right bottom. */
 // observer location
 StdVec<Vecd> observation_location = {PlateP_lb};
 //----------------------------------------------------------------------
@@ -163,7 +163,7 @@ int main()
 	size_t particle_num_w = wall_boundary.getBaseParticles().total_real_particles_;
 
 	PDBody plate(system, makeShared<MultiPolygonShape>(createPlateShape(), "PDBody"));
-	plate.defineAdaptationRatios(1.5075, 2.0);
+	//plate.defineAdaptationRatios(1.5075, 2.0);
 	plate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	plate.generateParticles<ParticleGeneratorLattice>();
 	size_t particle_num_s = plate.getBaseParticles().total_real_particles_;
@@ -188,6 +188,8 @@ int main()
 	//	Algorithms of fluid dynamics.
 	//----------------------------------------------------------------------
 	Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWall> pressure_relaxation(water_block_complex_relation);
+	Real h = water_block.sph_adaptation_->getKernel()->CutOffRadius();
+	pressure_relaxation.setcoeffacousticdamper(rho0_f, c_f, h);
 	Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWall> density_relaxation(water_block_complex_relation);
 	InteractionWithUpdate<fluid_dynamics::DensitySummationFreeSurfaceComplex> update_density_by_summation(water_block_complex_relation);
 	SimpleDynamics<TimeStepInitialization> initialize_a_fluid_step(water_block, makeShared<Gravity>(Vecd(0.0, -gravity_g)));
@@ -199,7 +201,8 @@ int main()
 	SimpleDynamics<OffsetInitialPosition> plate_offset_position(plate, offset);
 	SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 	SimpleDynamics<NormalDirectionFromBodyShape> plate_normal_direction(plate);	
-	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluid> fluid_pressure_force_on_plate(plate_water_contact_relation);
+	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluidforPD> fluid_pressure_force_on_plate(plate_water_contact_relation);
+	fluid_pressure_force_on_plate.setcoeffacousticdamper(rho0_f, c_f, h);
 	solid_dynamics::AverageVelocityAndAcceleration average_velocity_and_acceleration(plate);
 	//----------------------------------------------------------------------
 	//	Algorithms of Elastic dynamics.
@@ -217,7 +220,7 @@ int main()
 	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(plate_inner_relation, plate.sph_adaptation_->getKernel());
 	//Numerical Damping
 	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD> numerical_damping(plate_inner_relation, plate.sph_adaptation_->getKernel());
-	
+	numerical_damping.setfactor(2.0);
 	// ADR_cn calculation
 	ReduceDynamics<solid_dynamics::ADRFirstStep> computing_cn1(plate);
 	ReduceDynamics<solid_dynamics::ADRSecondStep> computing_cn2(plate);	
@@ -277,6 +280,13 @@ int main()
 		<< "	poisson = " << poisson << "\n" << "\n"
 		<< "	gravity_g = " << gravity_g << "\n" << "\n"
 		<< "# COMPUTATION START #" << "\n" << "\n";
+	//Time file
+	std::string Timepath = io_environment.output_folder_ + "/LogTime.txt";
+	if (fs::exists(Timepath))
+	{
+		fs::remove(Timepath);
+	}
+	std::ofstream time_file(Timepath.c_str(), ios::trunc);
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -292,7 +302,7 @@ int main()
 	//----------------------------------------------------------------------
 	int number_of_iterations = 0;
 	int screen_output_interval = 100;
-	Real end_time = 0.3;
+	Real end_time = 1.0;
 	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					/**< Default acoustic time step sizes. */
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
@@ -343,7 +353,7 @@ int main()
 					NosbPD_secondStep.parallel_exec(dt_s);
 
 					hourglass_control.parallel_exec(dt_s);
-					//numerical_damping.parallel_exec(dt_s);
+					numerical_damping.parallel_exec(dt_s);
 
 					NosbPD_thirdStep.parallel_exec(dt_s);					
 					NosbPD_fourthStep.parallel_exec(dt_s);
@@ -387,6 +397,7 @@ int main()
 		}
 		tick_count t2 = tick_count::now();
 		write_real_body_states_to_vtp.writeToFile();
+		time_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "\n";
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}

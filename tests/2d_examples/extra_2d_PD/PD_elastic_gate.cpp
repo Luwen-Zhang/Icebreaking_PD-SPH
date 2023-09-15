@@ -16,7 +16,7 @@ Real Dam_L = 0.1;						/**< Water block width. */
 Real Dam_H = 0.14;						/**< Water block height. */
 Real Gate_width = 0.005;					/**< Width of the gate. */
 Real Base_bottom_position = 0.079;		/**< Position of gate base. (In Y direction) */
-Real resolution_ref = Gate_width / 5.0; /**< Initial reference particle spacing. */
+Real resolution_ref = Gate_width / 10.0; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4.0;			/**< Extending width for BCs. */
 /** The offset that the rubber gate shifted above the tank. */
 Real dp_s = 0.5 * resolution_ref;
@@ -45,7 +45,7 @@ StdVec<Vecd> observation_location = {GateP_lb};
 //----------------------------------------------------------------------
 Real rho0_f = 1000.0;						   /**< Reference density of fluid. */
 Real gravity_g = 9.8;				   /**< Value of gravity. */
-Real U_f = 20.0;							   /**< Characteristic velocity. */
+Real U_f = 30.0;							   /**< Characteristic velocity. */
 Real c_f = U_f * sqrt(Dam_H * gravity_g); /**< Reference sound speed. */
 Real mu_f = 0.0;
 Real k_f = 0.0;
@@ -53,10 +53,10 @@ Real k_f = 0.0;
 //	Material parameters of the elastic gate.
 //----------------------------------------------------------------------
 Real rho0_s = 1100.0;	 /**< Reference density of gate. */
-Real poisson = 0.47; /**< Poisson ratio. */
+Real poisson = 0.0; /**< Poisson ratio. */
 Real Ae = 7.8e3;	 /**< Normalized Youngs Modulus. */
 //Real Youngs_modulus = Ae * rho0_f * U_f * U_f;
- Real Youngs_modulus = 1e7;
+ Real Youngs_modulus = 0.8e7;
 //----------------------------------------------------------------------
 //	Cases-dependent geometries
 //----------------------------------------------------------------------
@@ -159,7 +159,7 @@ int main()
 	size_t particle_num_w = wall_boundary.getBaseParticles().total_real_particles_;
 
 	PDBody gate(system, makeShared<MultiPolygonShape>(createGateShape(), "PDBody"));
-	//gate.defineAdaptationRatios(1.5075, 2.0);
+	gate.defineAdaptationRatios(1.5075, 2.0);
 	gate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	gate.generateParticles<ParticleGeneratorLattice>();
 	size_t particle_num_s = gate.getBaseParticles().total_real_particles_;
@@ -210,13 +210,13 @@ int main()
 	SimpleDynamics<solid_dynamics::NosbPDFirstStep> NosbPD_firstStep(gate);
 	InteractionWithUpdate<solid_dynamics::NosbPDSecondStep> NosbPD_secondStep(gate_inner_relation);
 	InteractionDynamics<solid_dynamics::NosbPDThirdStep> NosbPD_thirdStep(gate_inner_relation);
-	//SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(gate);
-	 SimpleDynamics<solid_dynamics::NosbPDFourthStepWithADR> NosbPD_fourthStepADR(gate);
+	SimpleDynamics<solid_dynamics::NosbPDFourthStep> NosbPD_fourthStep(gate);
+	 //SimpleDynamics<solid_dynamics::NosbPDFourthStepWithADR> NosbPD_fourthStepADR(gate);
 	//hourglass displacement mode control by LittleWood method
 	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(gate_inner_relation, gate.sph_adaptation_->getKernel());
 	//Numerical Damping
 	InteractionDynamics<solid_dynamics::PairNumericalDampingforPD> numerical_damping(gate_inner_relation, gate.sph_adaptation_->getKernel());
-	
+	numerical_damping.setfactor(2.0);
 	// ADR_cn calculation
 	ReduceDynamics<solid_dynamics::ADRFirstStep> computing_cn1(gate);
 	ReduceDynamics<solid_dynamics::ADRSecondStep> computing_cn2(gate);	
@@ -276,6 +276,13 @@ int main()
 		<< "	poisson = " << poisson << "\n" << "\n"
 		<< "	gravity_g = " << gravity_g << "\n" << "\n"
 		<< "# COMPUTATION START #" << "\n" << "\n";
+	//Time file
+	std::string Timepath = io_environment.output_folder_ + "/LogTime.txt";
+	if (fs::exists(Timepath))
+	{
+		fs::remove(Timepath);
+	}
+	std::ofstream time_file(Timepath.c_str(), ios::trunc);
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -291,8 +298,8 @@ int main()
 	//----------------------------------------------------------------------
 	int number_of_iterations = 0;
 	int screen_output_interval = 100;
-	Real end_time = 1.0;
-	Real output_interval = end_time / 200.0;
+	Real end_time = 0.5;
+	Real output_interval = end_time / 100.0;
 	Real dt = 0.0;					/**< Default acoustic time step sizes. */
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
 	Real dt_s_0 = gate_computing_time_step_size.parallel_exec();
@@ -353,7 +360,8 @@ int main()
 					}
 					ADR_cn = 0.001 * ADR_cn;
 					NosbPD_fourthStepADR.getADRcn(ADR_cn);*/
-					NosbPD_fourthStepADR.parallel_exec(dt_s);
+					//NosbPD_fourthStepADR.parallel_exec(dt_s);
+					NosbPD_fourthStep.parallel_exec(dt_s);
 
 					gate_constraint.parallel_exec(dt_s);
 
@@ -394,6 +402,7 @@ int main()
 		}
 		tick_count t2 = tick_count::now();
 		write_real_body_states_to_vtp.writeToFile();
+		time_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "\n";
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}

@@ -53,15 +53,15 @@ namespace SPH
 	}
 	//=============================================================================================//
 	void VonMisesStressforPD::update(size_t index_i, Real dt)
-	{
-		//Real norm1 = stress_[index_i].trace() * OneOverDimensions;
-		//Matd dev_eta = stress_[index_i] - norm1 * Matd::Identity();
-		//Real dev_eta_norm = dev_eta.norm();
+	{		
+		Mat2d sigma = stress_[index_i];
 
-		derived_variable_[index_i] = 0;
-		std::cout << "<VonMisesStressforPD> has not been available for 2D" << "\n";
-		system("pause");
-		exit(0);
+		Real sigmaxx = sigma(0, 0);
+		Real sigmayy = sigma(1, 1);
+		Real sigmaxy = sigma(0, 1);
+
+		derived_variable_[index_i] = 
+			sqrt(sigmaxx * sigmaxx + sigmayy * sigmayy - sigmaxx * sigmayy + 3.0 * sigmaxy * sigmaxy);		
 	}
 	//=================================================================================================//
 	void VonMisesPlasticStrainforPD::update(size_t index_i, Real dt)
