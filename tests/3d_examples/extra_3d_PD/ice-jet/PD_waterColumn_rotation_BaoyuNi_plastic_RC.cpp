@@ -24,7 +24,7 @@ Real inner_circle_radius = LR;
 Real rho0_f = 1000.0;
 //Real gravity_g = 9.81;
 Real gravity_g = 0.0;
-Real U_f = 50.34;
+Real U_f = 62.52;
 //Real c_f = 10.0 * U_f;
 Real c_f = SMIN(10.0 * U_f, 1580.0);
 Real mu_f = 0.0;
@@ -44,7 +44,7 @@ Real sigma_Y0 = sigma_t0;
 //Hardening parameters for DP
 //Real alpha = (sigma_c0 - sigma_t0) / (sigma_c0 + sigma_t0) / sqrt(3);
 //Real flow_stress = (2.0 * sigma_c0 * sigma_t0) / (sigma_c0 + sigma_t0) / sqrt(3);
-Real alpha = 0.3333 / sqrt(3);
+Real alpha = 0.4423 / sqrt(3);
 Real flow_stress = 1.1e6 / sqrt(3);
 //Shared hardening parameters
 Real isohardening_modulus_H = 6.89e6;

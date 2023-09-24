@@ -60,9 +60,9 @@ namespace SPH
 	}
 	//=================================================================================================//
 	Winfunc::Winfunc(Real h)
-		: Kernel(h, "WinfuncPD")
+		: Kernel(h, "WinfuncPD")//Monaghan, Lattanzio (1985)
 	{
-		factor_W_1D_ = inv_h_ * 3.0 / 4.0;
+		factor_W_1D_ = inv_h_;
 		//factor_W_2D_ = inv_h_ * inv_h_ * 7.0 / (4.0 * Pi);
 		//factor_W_3D_ = inv_h_ * inv_h_ * inv_h_ * 21.0 / (16.0 * Pi);
 		factor_W_2D_ = inv_h_ * inv_h_ * 15.0 / (7.0 * Pi);
