@@ -12,7 +12,7 @@ using namespace SPH;   //	Namespace cite here.
 //----------------------------------------------------------------------
 Real JR = 0.002; 									/**< Jet radius. */
 Real JH = 0.04; 									/**< Jet height. */
-Real IT = 10 * JR * 0.5; 								/**< Ice thickness. */
+Real IT = 10 * JR; 								/**< Ice thickness. */
 Real ID = 0.115; 								/**< Ice diameter. */
 Real RL = 0.01;							/**< Length of the restrictor. */
 
@@ -43,7 +43,7 @@ StdVec<Vecd> observation_location = {PlateP_lb};
 //----------------------------------------------------------------------
 Real rho0_f = 1000.0;						   /**< Reference density of fluid. */
 Real gravity_g = 9.81;				   /**< Value of gravity. */
-Real U_f = 62.52;					   /**< Characteristic velocity. */
+Real U_f = 50.34;					   /**< Characteristic velocity. */
 Real c_f = SMAX(U_f * sqrt(JH * gravity_g), 10 * U_f); /**< Reference sound speed. */
 Real mu_f = 0.0;
 Real k_f = 0.0;
@@ -301,7 +301,7 @@ int main()
 	//----------------------------------------------------------------------
 	int number_of_iterations = 0;
 	int screen_output_interval = 10;
-	Real end_time = 0.1e-3;
+	Real end_time = 0.5e-3;
 	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					/**< Default acoustic time step sizes. */
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */

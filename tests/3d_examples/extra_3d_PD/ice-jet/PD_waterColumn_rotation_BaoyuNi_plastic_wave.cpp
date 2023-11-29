@@ -9,15 +9,15 @@ using namespace SPH;
 
 // general parameters for geometry
 
-Real LR = 0.002;				  // liquid column radius in XZ
+Real LR = 0.0032;				  // liquid column radius in XZ
 Real LH = 0.04428;				  // liquid column height in Y
 
 int resolution(20);
 
-Real plate_Y = 0.01;				/**< thickness of the ice plate. */
-Real plate_R = 0.02;	/**< width of the ice plate. */
+Real plate_Y = 2.0 * LR;				/**< thickness of the ice plate. */
+Real plate_R = 0.0575;	/**< width of the ice plate. */
 
-Real resolution_ref = 5e-4;	  // particle spacing
+Real resolution_ref = 8e-4;	  // particle spacing
 Real BW = resolution_ref * 2; // boundary width
 Real inner_circle_radius = LR;
 // for material properties of the fluid
@@ -394,13 +394,13 @@ int main(int ac, char *av[])
 	size_t number_of_iterations = system.RestartStep();
 	size_t number_of_iterations_s = 0;
 	int screen_output_interval = 1;
-	int screen_output_interval_s = 3;
-	Real end_time = 0.4e-4;
+	int screen_output_interval_s = 4;
+	Real end_time = 0.8e-4;
 	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					// default acoustic time step sizes
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
 	//Real dt_s_0 = plate_computing_time_step_size.parallel_exec();
-	Real dt_s_0 = 4e-8;
+	Real dt_s_0 = 2e-8;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
@@ -458,11 +458,11 @@ int main(int ac, char *av[])
 						/*std::cout << std::fixed << std::setprecision(9) 
 							<< "		N_s=" << number_of_iterations_s 
 							<< "	dt_s = " << dt_s << "\n";*/
-						tick_count t2 = tick_count::now();
-						write_water_block_states.writeToFile();
-						time_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "\n";
-						tick_count t3 = tick_count::now();
-						interval += t3 - t2;
+							tick_count t2 = tick_count::now();
+							write_water_block_states.writeToFile();
+							time_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "\n";
+							tick_count t3 = tick_count::now();
+							interval += t3 - t2;
 					}
 					number_of_iterations_s++;
 				}

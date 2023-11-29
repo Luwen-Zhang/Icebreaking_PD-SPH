@@ -9,15 +9,16 @@ using namespace SPH;
 
 // general parameters for geometry
 
-Real LR = 0.002;				  // liquid column radius in XZ
+Real LR = 0.0032;				  // liquid column radius in XZ
 Real LH = 0.04428;				  // liquid column height in Y
 
 int resolution(20);
 
+//Real plate_Y = 2.0 * LR;				/**< thickness of the ice plate. */
 Real plate_Y = 0.01;				/**< thickness of the ice plate. */
-Real plate_R = 0.02;	/**< width of the ice plate. */
+Real plate_R = 0.0575;	/**< width of the ice plate. */
 
-Real resolution_ref = 5e-4;	  // particle spacing
+Real resolution_ref = 8e-4;	  // particle spacing
 Real BW = resolution_ref * 2; // boundary width
 Real inner_circle_radius = LR;
 // for material properties of the fluid
@@ -166,8 +167,8 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	BoundingBox system_domain_bounds(Vecd(-plate_R - BW, -BW, -plate_R - BW), Vecd(plate_R + BW, 2.0 * LH + BW, plate_R + BW));
 	SPHSystem system(system_domain_bounds, resolution_ref);
-	system.setRunParticleRelaxation(false);
-	system.setReloadParticles(true);
+	system.setRunParticleRelaxation(true);
+	system.setReloadParticles(false);
 	system.handleCommandlineOptions(ac, av);
 	IOEnvironment io_environment(system);
 	//----------------------------------------------------------------------
@@ -180,10 +181,10 @@ int main(int ac, char *av[])
 	
 	size_t particle_num_w = 0;
 
-	PDBody plate(system, makeShared<PlateShape>("PDBody"));
+	//PDBody plate(system, makeShared<PlateShape>("PDBody"));
 	//plate.defineAdaptationRatios(1.5075, 0.8);
-	//SolidBody plate(system, makeShared<PlateShape>("SPHBody"));
-	//plate.defineAdaptationRatios(1.15, 0.8);
+	SolidBody plate(system, makeShared<PlateShape>("SPHBody"));
+	plate.defineAdaptationRatios(1.15, 0.8);
 	plate.defineBodyLevelSetShape()->writeLevelSet(io_environment);
 	//plate.defineParticlesAndMaterial<NosbPDParticles, HughesWingetSolid>(rho0_s, Youngs_modulus, poisson);
 	plate.defineParticlesAndMaterial<NosbPDPlasticParticles, DruckerPragerPlasticityforPD>(rho0_s, Youngs_modulus, poisson,
@@ -211,6 +212,8 @@ int main(int ac, char *av[])
 	//ContactRelation plate_observer_contact_relation(plate_observer, { &plate });
 	
 	BodyStatesRecordingToVtp write_water_block_states(io_environment, system.real_bodies_);
+	write_water_block_states.writeToFile(0.0);
+	exit(0);
 	if (system.RunParticleRelaxation())
 	{
 		/**
@@ -231,7 +234,6 @@ int main(int ac, char *av[])
 		random_column_particles.parallel_exec(0.25);
 		relaxation_step_inner.SurfaceBounding().parallel_exec();
 		write_water_block_states.writeToFile(0.0);
-
 		/** relax particles of the insert body. */
 		int ite_p = 0;
 		while (ite_p < 1000)
@@ -394,13 +396,13 @@ int main(int ac, char *av[])
 	size_t number_of_iterations = system.RestartStep();
 	size_t number_of_iterations_s = 0;
 	int screen_output_interval = 1;
-	int screen_output_interval_s = 3;
-	Real end_time = 0.4e-4;
+	int screen_output_interval_s = 4;
+	Real end_time = 0.8e-4;
 	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;					// default acoustic time step sizes
 	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
 	//Real dt_s_0 = plate_computing_time_step_size.parallel_exec();
-	Real dt_s_0 = 4e-8;
+	Real dt_s_0 = 2e-8;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
@@ -458,11 +460,11 @@ int main(int ac, char *av[])
 						/*std::cout << std::fixed << std::setprecision(9) 
 							<< "		N_s=" << number_of_iterations_s 
 							<< "	dt_s = " << dt_s << "\n";*/
-						tick_count t2 = tick_count::now();
-						write_water_block_states.writeToFile();
-						time_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "\n";
-						tick_count t3 = tick_count::now();
-						interval += t3 - t2;
+							tick_count t2 = tick_count::now();
+							write_water_block_states.writeToFile();
+							time_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "\n";
+							tick_count t3 = tick_count::now();
+							interval += t3 - t2;
 					}
 					number_of_iterations_s++;
 				}
