@@ -24,7 +24,7 @@ Real inner_circle_radius = LR;
 Real rho0_f = 1000.0;
 //Real gravity_g = 9.81;
 Real gravity_g = 0.0;
-Real U_f = 62.52;
+Real U_f = 73.81;
 //Real c_f = 10.0 * U_f;
 Real c_f = SMIN(10.0 * U_f, 1580.0);
 Real mu_f = 0.0;
@@ -51,7 +51,7 @@ Real isohardening_modulus_H = 6.89e6;
 Real kinhardening_modulus_H = 0.0;
 //Damage parameters
 //Real max_tension_stress = SMAX(sigma_t0, flow_stress / alpha / 3);
-Real max_tension_stress = 0.7e6;
+Real max_tension_stress = 0.75e6;
 Real max_pressure = sigma_c0 ;
 Real max_shear_stress = 7.0e6;
 Real max_plastic_strain = 0.0035;
