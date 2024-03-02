@@ -57,5 +57,21 @@ namespace SPH {
 		virtual ~EulerianFluidBody() {};
 		virtual EulerianFluidBody* ThisObjectPtr() override { return this; };
 	};
+	/**
+	 * Created by Haotian Shi from SJTU
+	 * @class PRTBody
+	 * @brief Mixed by Air and Water ghost particles, 
+	 * not directly used for simulation but for Particle Regeneration Technique (PRT)
+	 */
+	class PRTBody : FluidBody
+	{
+	public:
+		size_t air_particle_num_;
+		size_t water_particle_num_;
+
+		explicit PRTBody(SPHSystem& system, SharedPtr<Shape> shape_ptr);
+		virtual ~PRTBody() {};
+		virtual PRTBody* ThisObjectPtr() override { return this; };
+	};
 }
 #endif //FLUID_BODY_H

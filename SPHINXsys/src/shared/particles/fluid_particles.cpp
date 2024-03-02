@@ -103,5 +103,22 @@ namespace SPH
 		addVariableToWrite<Real>("Pressure");
 	}
 	//=================================================================================================//
+	PRTParticles::
+		PRTParticles(SPHBody& sph_body, CompressibleFluid* compressible_fluid)
+		: CompressibleFluidParticles(sph_body, compressible_fluid) {}
+	//=================================================================================================//
+	void PRTParticles::initializeOtherVariables()
+	{
+		CompressibleFluidParticles::initializeOtherVariables();
+		/**
+		 *	register sortable particle data
+		 */
+		registerVariable(fi_, "PhaseMark");
+		/**
+		 *	add output particle data
+		 */
+		
+	}
+	//=================================================================================================//
 }
 //=====================================================================================================//

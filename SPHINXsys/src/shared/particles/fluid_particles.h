@@ -124,5 +124,22 @@ namespace SPH
 		/** Return the ptr of this object. */
 		virtual WeaklyCompressibleFluidParticles *ThisObjectPtr() override { return this; };
 	};
+	/**
+	 * Created by Haotian Shi from SJTU
+	 * @class PRTParticles
+	 * @brief Ghost particles for Particle Regeneration Technique (PRT)
+	 */
+	class PRTParticles : CompressibleFluidParticles
+	{
+	public:
+		StdLargeVec<Real> fi_;	  /**< phase mark */
+
+		PRTParticles(SPHBody& sph_body, CompressibleFluid* compressible_fluid);
+		virtual ~PRTParticles() {};
+		/** Initialize particle variables used in PRT fluid particle. */
+		virtual void initializeOtherVariables() override;
+		/** Return the ptr of this object. */
+		virtual PRTParticles* ThisObjectPtr() override { return this; };
+	};
 }
 #endif // FLUID_PARTICLES_H

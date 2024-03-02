@@ -16,4 +16,7 @@ namespace SPH
 		defineAdaptation<SPHAdaptation>(1.3);
 	}
 	//=================================================================================================//
+	PRTBody::PRTBody(SPHSystem& system, SharedPtr<Shape> shape_ptr)
+		: FluidBody(system, shape_ptr) {}
+	//=================================================================================================//
 }
