@@ -259,10 +259,12 @@ namespace SPH
 			Integration2ndHalfType::interaction(index_i, dt);
 
 			Real density_change_rate = 0.0;
+			Real energy_change_rate = 0.0;
 			Vecd p_dissipation = Vecd::Zero();
 			for (size_t k = 0; k < this->contact_configuration_.size(); ++k)
 			{
 				StdLargeVec<Vecd>& vel_k = *(this->contact_vel_n_[k]);
+				StdLargeVec<Real>& p_k = *(this->contact_p_[k]);
 				CurrentRiemannSolver& riemann_solver_k = riemann_solvers_[k];
 				Neighborhood& contact_neighborhood = (*this->contact_configuration_[k])[index_i];
 				for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
@@ -275,9 +277,15 @@ namespace SPH
 					density_change_rate += 2.0 * (this->vel_[index_i] - vel_ave).dot(e_ij) * dW_ijV_j;
 					Real u_jump = (this->vel_[index_i] - vel_k[index_j]).dot(e_ij);
 					p_dissipation += riemann_solver_k.DissipativePJump(u_jump) * dW_ijV_j * e_ij;
+
+					// Energy equation simplified by Haotian_Shi from SJTU
+					energy_change_rate += 2.0 * riemann_solver_k.AverageP(this->p_[index_i], p_k[index_j]) * 
+						(this->vel_[index_i] - vel_ave).dot(e_ij) * dW_ijV_j;
+					// end 
 				}
 			}
 			this->drho_dt_[index_i] += density_change_rate * this->rho_[index_i];
+			this->dE_dt_[index_i] += energy_change_rate / this->rho_[index_i];
 			this->acc_[index_i] += p_dissipation / this->rho_[index_i];
 		}
 		//=================================================================================================//
