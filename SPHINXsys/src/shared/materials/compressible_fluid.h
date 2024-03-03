@@ -41,10 +41,11 @@ namespace SPH
 	{
 	protected:
 		Real gamma_; /** heat capacity ratio */
+		Real B_; /** material constant added by Haotian_Shi from SJTU */
 
 	public:
-		explicit CompressibleFluid(Real rho0, Real gamma, Real mu = 0.0)
-			: Fluid(rho0, mu), gamma_(gamma)
+		explicit CompressibleFluid(Real rho0, Real gamma, Real mu = 0.0, Real B = 0.0)
+			: Fluid(rho0, mu), gamma_(gamma), B_(B)
 		{
 			material_type_name_ = "CompressibleFluid";
 		};
@@ -53,6 +54,9 @@ namespace SPH
 		Real HeatCapacityRatio() { return gamma_; };
 		virtual Real getPressure(Real rho, Real rho_e) override;
 		virtual Real getPressure(Real rho) override { return 0.0; };
+		//Tamann EoS added by Haotian_Shi from SJTU
+		Real getPressurebyTamann(Real rho, Real rho_e);
+		//end added by Haotian_Shi from SJTU
 		virtual Real DensityFromPressure(Real p) override { return 0.0; };
 		virtual Real getSoundSpeed(Real p, Real rho) override;
 		virtual CompressibleFluid *ThisObjectPtr() override { return this; };

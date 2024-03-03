@@ -14,4 +14,9 @@ namespace SPH {
 		return sqrt(gamma_ * p / rho);
 	}
 	//=============================================================================================//
+	Real CompressibleFluid::getPressurebyTamann(Real rho, Real rho_e)
+	{
+		return rho * rho_e *(gamma_ - 1.0) - gamma_ * B_;
+	}
+	//=============================================================================================//
 }
