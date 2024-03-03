@@ -171,6 +171,62 @@ namespace SPH
 			this->acc_[index_i] += p_dissipation / this->rho_[index_i];
 		}
 		//=================================================================================================//
+		template <class RelaxationInnerType>
+		RelaxationCompressibleMultiPhase<RelaxationInnerType>::
+			RelaxationCompressibleMultiPhase(BaseInnerRelation& inner_relation,
+				BaseContactRelation& contact_relation)
+			: RelaxationInnerType(inner_relation), CompressibleMultiPhaseContactData(contact_relation)
+		{
+			if (&inner_relation.getSPHBody() != &contact_relation.getSPHBody())
+			{
+				std::cout << "\n Error: the two body_relations do not have the same source body!" << std::endl;
+				std::cout << __FILE__ << ':' << __LINE__ << std::endl;
+				exit(1);
+			}
+
+			for (size_t k = 0; k != contact_particles_.size(); ++k)
+			{
+				contact_fluids_.push_back(&contact_particles_[k]->fluid_);
+				contact_p_.push_back(&(contact_particles_[k]->p_));
+				contact_rho_n_.push_back(&(contact_particles_[k]->rho_));
+				contact_vel_n_.push_back(&(contact_particles_[k]->vel_));
+			}
+		}
+		//=================================================================================================//
+		template <class Integration1stHalfType>
+		BaseCompressibleMultiPhaseIntegration1stHalf<Integration1stHalfType>::
+			BaseCompressibleMultiPhaseIntegration1stHalf(BaseInnerRelation& inner_relation,
+				BaseContactRelation& contact_relation)
+			: RelaxationCompressibleMultiPhase<Integration1stHalfType>(inner_relation, contact_relation)
+		{
+			for (size_t k = 0; k != this->contact_particles_.size(); ++k)
+			{
+				riemann_solvers_.push_back(CurrentRiemannSolver(this->fluid_, *this->contact_fluids_[k]));
+			}
+		}
+		//=================================================================================================//
+		template <class Integration1stHalfType>
+		BaseCompressibleMultiPhaseIntegration1stHalf<Integration1stHalfType>::
+			BaseCompressibleMultiPhaseIntegration1stHalf(ComplexRelation& complex_relation)
+			: BaseCompressibleMultiPhaseIntegration1stHalf(complex_relation.getInnerRelation(), complex_relation.getContactRelation()) {}
+		//=================================================================================================//
+		template <class Integration2ndHalfType>
+		BaseCompressibleMultiPhaseIntegration2ndHalf<Integration2ndHalfType>::
+			BaseCompressibleMultiPhaseIntegration2ndHalf(BaseInnerRelation& inner_relation,
+				BaseContactRelation& contact_relation)
+			: RelaxationCompressibleMultiPhase<Integration2ndHalfType>(inner_relation, contact_relation)
+		{
+			for (size_t k = 0; k != this->contact_particles_.size(); ++k)
+			{
+				riemann_solvers_.push_back(CurrentRiemannSolver(this->fluid_, *this->contact_fluids_[k]));
+			}
+		}
+		//=================================================================================================//
+		template <class Integration2ndHalfType>
+		BaseCompressibleMultiPhaseIntegration2ndHalf<Integration2ndHalfType>::
+			BaseCompressibleMultiPhaseIntegration2ndHalf(ComplexRelation& complex_relation)
+			: BaseCompressibleMultiPhaseIntegration2ndHalf(complex_relation.getInnerRelation(), complex_relation.getContactRelation()) {}
+		//=================================================================================================//
 	}
 	//=================================================================================================//
 }

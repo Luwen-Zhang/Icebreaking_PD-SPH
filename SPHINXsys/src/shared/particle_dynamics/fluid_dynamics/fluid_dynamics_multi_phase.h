@@ -39,6 +39,10 @@ namespace SPH
 		typedef DataDelegateContact<FluidParticles, FluidParticles, DataDelegateEmptyBase>
 			MultiPhaseContactData;
 		typedef DataDelegateContact<FluidParticles, FluidParticles> MultiPhaseData;
+		// Container for Compressible Multi Phase SPH added by Haotian_Shi from SJTU
+		typedef DataDelegateContact<CompressibleFluidParticles, CompressibleFluidParticles, DataDelegateEmptyBase>
+			CompressibleMultiPhaseContactData;
+		// end added by Haotian_Shi from SJTU
 		/**
 		 * @class ViscousAccelerationMultiPhase
 		 * @brief  the viscosity force induced acceleration
@@ -105,6 +109,10 @@ namespace SPH
 			BaseIntegration1stHalfWithWall<MultiPhaseIntegration1stHalfRiemann>;
 		using ExtendMultiPhaseIntegration1stHalfRiemannWithWall =
 			BaseExtendIntegration1stHalfWithWall<MultiPhaseIntegration1stHalfRiemann>;
+		// added by Haotian_Shi from SJTU
+		using CompressibleMultiPhaseIntegration1stHalfRiemannWithWall =
+			BaseIntegration1stHalfWithWall<CompressibleMultiPhaseIntegration1stHalfRiemann>;
+		// end added by Haotian_Shi from SJTU
 
 		/**
 		 * @class BaseMultiPhaseIntegration2ndHalf
@@ -128,6 +136,10 @@ namespace SPH
 		using MultiPhaseIntegration2ndHalfRiemann = BaseMultiPhaseIntegration2ndHalf<Integration2ndHalfRiemann>;
 		using MultiPhaseIntegration2ndHalfWithWall = BaseMultiPhaseIntegration2ndHalf<MultiPhaseIntegration2ndHalf>;
 		using MultiPhaseIntegration2ndHalfRiemannWithWall = BaseIntegration2ndHalfWithWall<MultiPhaseIntegration2ndHalfRiemann>;
+		// added by Haotian_Shi from SJTU
+		using CompressibleMultiPhaseIntegration2ndHalfRiemannWithWall =
+			BaseIntegration2ndHalfWithWall<CompressibleMultiPhaseIntegration2ndHalfRiemann>;
+		// end added by Haotian_Shi from SJTU
 
 		/**
 		 * @class MultiPhaseColorFunctionGradient
@@ -149,6 +161,67 @@ namespace SPH
 			StdLargeVec<Vecd> color_grad_, surface_norm_;
 			StdVec<StdLargeVec<Real> *> contact_Vol_;
 		};
+		//======================================================//
+		/*from here created by Haotian_Shi from SJTU*/
+
+		/**
+		 * @class RelaxationCompressibleMultiPhase
+		 * @brief Abstract base class for general compressible multiphase fluid dynamics
+		 */
+		template <class RelaxationInnerType>
+		class RelaxationCompressibleMultiPhase : public RelaxationInnerType, public CompressibleMultiPhaseContactData
+		{
+		public:
+			RelaxationCompressibleMultiPhase(BaseInnerRelation& inner_relation,
+				BaseContactRelation& contact_relation);
+			virtual ~RelaxationCompressibleMultiPhase() {};
+
+		protected:
+			StdVec<CompressibleFluid*> contact_fluids_;
+			StdVec<StdLargeVec<Real>*> contact_p_, contact_rho_n_;
+			StdVec<StdLargeVec<Vecd>*> contact_vel_n_;
+		};
+		/**
+		 * @class BaseMultiPhaseIntegration1stHalf
+		 * @brief  template class for multiphase pressure relaxation scheme
+		 */
+		template <class Integration1stHalfType>
+		class BaseCompressibleMultiPhaseIntegration1stHalf : public RelaxationCompressibleMultiPhase<Integration1stHalfType>
+		{
+		public:
+			BaseCompressibleMultiPhaseIntegration1stHalf(BaseInnerRelation& inner_relation,
+				BaseContactRelation& contact_relation);
+			explicit BaseCompressibleMultiPhaseIntegration1stHalf(ComplexRelation& complex_relation);
+			virtual ~BaseCompressibleMultiPhaseIntegration1stHalf() {};
+			void interaction(size_t index_i, Real dt = 0.0);
+
+		protected:
+			using CurrentRiemannSolver = decltype(Integration1stHalfType::riemann_solver_);
+			StdVec<CurrentRiemannSolver> riemann_solvers_;
+			virtual Vecd computeNonConservativeAcceleration(size_t index_i) override;
+		};
+		using CompressibleMultiPhaseIntegration1stHalfRiemann =
+			BaseCompressibleMultiPhaseIntegration1stHalf<CompressibleIntegration1stHalfRiemann>;
+		/**
+		 * @class BaseMultiPhaseIntegration2ndHalf
+		 * @brief  template class pressure relaxation scheme with wall boundary
+		 */
+		template <class Integration2ndHalfType>
+		class BaseCompressibleMultiPhaseIntegration2ndHalf : public RelaxationCompressibleMultiPhase<Integration2ndHalfType>
+		{
+		public:
+			BaseCompressibleMultiPhaseIntegration2ndHalf(BaseInnerRelation& inner_relation,
+				BaseContactRelation& contact_relation);
+			explicit BaseCompressibleMultiPhaseIntegration2ndHalf(ComplexRelation& complex_relation);
+			virtual ~BaseCompressibleMultiPhaseIntegration2ndHalf() {};
+			void interaction(size_t index_i, Real dt = 0.0);
+
+		protected:
+			using CurrentRiemannSolver = decltype(Integration2ndHalfType::riemann_solver_);
+			StdVec<CurrentRiemannSolver> riemann_solvers_;
+		};
+		using CompressibleMultiPhaseIntegration2ndHalfRiemann =
+			BaseCompressibleMultiPhaseIntegration2ndHalf<CompressibleIntegration2ndHalfRiemann>;
 	}
 }
 #endif // FLUID_DYNAMICS_MULTI_PHASE_H

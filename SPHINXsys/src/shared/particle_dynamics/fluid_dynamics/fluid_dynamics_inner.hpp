@@ -136,6 +136,49 @@ namespace SPH
 			acc_[index_i] = p_dissipation / rho_[index_i];
 		};
 		//=================================================================================================//
+		template <class RiemannSolverType>
+		BaseCompressibleIntegration1stHalf<RiemannSolverType>::BaseCompressibleIntegration1stHalf(BaseInnerRelation& inner_relation)
+			: BaseCompressibleIntegration(inner_relation), riemann_solver_(fluid_, fluid_) {
+
+			Real h = inner_relation.getSPHBody().sph_adaptation_->getKernel()->CutOffRadius();
+			coeff_acoustic_damper_ = 0.3 * fluid_.ReferenceSoundSpeed() * fluid_.ReferenceDensity() * h;
+
+		}
+		//=================================================================================================//
+		template <class RiemannSolverType>
+		void BaseCompressibleIntegration1stHalf<RiemannSolverType>::initialization(size_t index_i, Real dt)
+		{
+			E_[index_i] += dE_dt_[index_i] * dt * 0.5;
+			rho_[index_i] += drho_dt_[index_i] * dt * 0.5;
+			p_[index_i] = fluid_.getPressurebyTamann(rho_[index_i], E_[index_i]);
+			pos_[index_i] += vel_[index_i] * dt * 0.5;
+		}
+		//=================================================================================================//
+		template <class RiemannSolverType>
+		void BaseCompressibleIntegration1stHalf<RiemannSolverType>::update(size_t index_i, Real dt)
+		{
+			vel_[index_i] += (acc_prior_[index_i] + acc_[index_i]) * dt;
+		}
+		//=================================================================================================//
+		template <class RiemannSolverType>
+		BaseCompressibleIntegration2ndHalf<RiemannSolverType>::BaseCompressibleIntegration2ndHalf(BaseInnerRelation& inner_relation)
+			: BaseCompressibleIntegration(inner_relation), riemann_solver_(fluid_, fluid_),
+			Vol_(particles_->Vol_), mass_(particles_->mass_) {}
+		//=================================================================================================//
+		template <class RiemannSolverType>
+		void BaseCompressibleIntegration2ndHalf<RiemannSolverType>::initialization(size_t index_i, Real dt)
+		{
+			pos_[index_i] += vel_[index_i] * dt * 0.5;
+		}
+		//=================================================================================================//
+		template <class RiemannSolverType>
+		void BaseCompressibleIntegration2ndHalf<RiemannSolverType>::update(size_t index_i, Real dt)
+		{
+			E_[index_i] += dE_dt_[index_i] * dt * 0.5;
+			rho_[index_i] += drho_dt_[index_i] * dt * 0.5;
+			Vol_[index_i] = mass_[index_i] / rho_[index_i];
+		}
+		//=================================================================================================//
 	}
 	//=================================================================================================//
 }

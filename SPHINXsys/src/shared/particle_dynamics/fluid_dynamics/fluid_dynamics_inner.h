@@ -46,6 +46,10 @@ namespace SPH
 	{
 		typedef DataDelegateSimple<FluidParticles> FluidDataSimple;
 		typedef DataDelegateInner<FluidParticles> FluidDataInner;
+		// Container for Compressible Multi Phase SPH added by Haotian_Shi from SJTU
+		typedef DataDelegateSimple<CompressibleFluidParticles> CompressibleFluidDataSimple;
+		typedef DataDelegateInner<CompressibleFluidParticles> CompressibleFluidDataInner;
+		// end added by Haotian_Shi from SJTU
 
 		/**
 		 * @class FluidInitialCondition
@@ -360,6 +364,64 @@ namespace SPH
 			StdLargeVec<Matd> &tau_, &dtau_dt_;
 			Real mu_p_, lambda_;
 		};
+		//======================================================//
+		/*from here created by Haotian_Shi from SJTU*/
+
+		/**
+		 * @class BaseCompressibleIntegration
+		 * @brief Pure abstract base class for compressible fluid relaxation schemes
+		 */
+		class BaseCompressibleIntegration : public LocalDynamics, public CompressibleFluidDataInner
+		{
+		public:
+			explicit BaseCompressibleIntegration(BaseInnerRelation& inner_relation);
+			virtual ~BaseCompressibleIntegration() {};
+
+		protected:
+			Fluid& fluid_;
+			StdLargeVec<Real>& rho_, & E_, & p_, & drho_dt_, & dE_dt_, & u_div_;
+			StdLargeVec<Vecd>& pos_, & vel_, & acc_, & acc_prior_;
+		};
+		/**
+		 * @class BaseCompressibleIntegration1stHalf
+		 * @brief Template class for pressure relaxation scheme with the Riemann solver
+		 * as template variable
+		 */
+		template <class RiemannSolverType>
+		class BaseCompressibleIntegration1stHalf : public BaseCompressibleIntegration
+		{
+		public:
+			explicit BaseCompressibleIntegration1stHalf(BaseInnerRelation& inner_relation);
+			virtual ~BaseCompressibleIntegration1stHalf() {};
+			RiemannSolverType riemann_solver_;
+			Real coeff_acoustic_damper_;
+			void initialization(size_t index_i, Real dt = 0.0);
+			void interaction(size_t index_i, Real dt = 0.0);
+			void update(size_t index_i, Real dt = 0.0);
+
+		protected:
+			virtual Vecd computeNonConservativeAcceleration(size_t index_i);
+		};
+		using CompressibleIntegration1stHalfRiemann = BaseCompressibleIntegration1stHalf<AcousticRiemannSolver>;
+		/**
+		 * @class BaseCompressibleIntegration2ndHalf
+		 * @brief  Template density relaxation scheme with different Riemann solver
+		 */
+		template <class RiemannSolverType>
+		class BaseCompressibleIntegration2ndHalf : public BaseCompressibleIntegration
+		{
+		public:
+			explicit BaseCompressibleIntegration2ndHalf(BaseInnerRelation& inner_relation);
+			virtual ~BaseCompressibleIntegration2ndHalf() {};
+			RiemannSolverType riemann_solver_;
+			void initialization(size_t index_i, Real dt = 0.0);
+			void interaction(size_t index_i, Real dt = 0.0);
+			void update(size_t index_i, Real dt = 0.0);
+
+		protected:
+			StdLargeVec<Real>& Vol_, & mass_;
+		};
+		using CompressibleIntegration2ndHalfRiemann = BaseCompressibleIntegration2ndHalf<AcousticRiemannSolver>;
 	}
 }
 #endif // FLUID_DYNAMICS_INNER_H

@@ -106,6 +106,9 @@ namespace SPH
 		Real ReferenceSoundSpeed() { return c0_; };
 		virtual Real getPressure(Real rho) = 0;
 		virtual Real getPressure(Real rho, Real rho_e) { return getPressure(rho); };
+		//Tamann EoS added by Haotian_Shi from SJTU
+		virtual Real getPressurebyTamann(Real rho, Real rho_e) = 0;
+		//end added by Haotian_Shi from SJTU
 		virtual Real DensityFromPressure(Real p) = 0;
 		virtual Real getSoundSpeed(Real p = 0.0, Real rho = 1.0) = 0;
 		virtual Fluid *ThisObjectPtr() override { return this; };

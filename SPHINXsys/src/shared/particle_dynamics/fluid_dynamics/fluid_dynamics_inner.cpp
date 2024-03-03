@@ -298,6 +298,13 @@ namespace SPH
 			tau_[index_i] += dtau_dt_[index_i] * dt * 0.5;
 		}
 		//=================================================================================================//
+		BaseCompressibleIntegration::BaseCompressibleIntegration(BaseInnerRelation& inner_relation)
+			: LocalDynamics(inner_relation.getSPHBody()), CompressibleFluidDataInner(inner_relation),
+			fluid_(particles_->fluid_), rho_(particles_->rho_), E_(particles_->E_),
+			p_(particles_->p_), drho_dt_(particles_->drho_dt_), dE_dt_(particles_->dE_dt_), u_div_(particles_->u_div_),
+			pos_(particles_->pos_), vel_(particles_->vel_),
+			acc_(particles_->acc_), acc_prior_(particles_->acc_prior_) {}
+		//=================================================================================================//
 	}
 	//=====================================================================================================//
 }

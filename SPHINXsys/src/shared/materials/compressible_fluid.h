@@ -55,7 +55,7 @@ namespace SPH
 		virtual Real getPressure(Real rho, Real rho_e) override;
 		virtual Real getPressure(Real rho) override { return 0.0; };
 		//Tamann EoS added by Haotian_Shi from SJTU
-		Real getPressurebyTamann(Real rho, Real rho_e);
+		virtual Real getPressurebyTamann(Real rho, Real rho_e) override;
 		//end added by Haotian_Shi from SJTU
 		virtual Real DensityFromPressure(Real p) override { return 0.0; };
 		virtual Real getSoundSpeed(Real p, Real rho) override;
