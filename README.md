@@ -9,6 +9,6 @@ The typical circumferential and radial cracks are vividly simulated.
 Ice breaking by a high-speed water jet impact
 
 <a href="https://github.com/SPH-PD-Initializer/PD-SPHinXsys/tree/master/tests/3d_examples/extra_3d_PD/ice-jet/PD_waterColumn_rotation_BaoyuNi_plastic_RC.cpp">
-<img src="https://github.com/SPH-PD-Initializer/PD-SPHinXsys/tree/master/ICEBREAKING.mov" height="192px"></a>
+<img src="https://github.com/SPH-PD-Initializer/PD-SPHinXsys/tree/master/IceBreaking.gif" height="192px"></a>
 
 If you have any further question, you are also welcomed to contact haotian_shi@sjtu.edu.cn
