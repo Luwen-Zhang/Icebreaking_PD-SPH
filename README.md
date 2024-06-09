@@ -4,6 +4,8 @@ Coupled NOSB-PD and low-dissipation Riemann SPH for Fluid-Structure Interaction 
 An Ice Plastic Damage (IPD) model is developed to effectively capture the quasi-brittle behavior of oridinary ice.
 The typical circumferential and radial cracks are vividly simulated.
 
+To learn about the usage of this code, please refer to the [PDREADME](PDREADME.md).
+
 ## Examples at a glance
 
 Ice breaking by a high-speed water jet impact
