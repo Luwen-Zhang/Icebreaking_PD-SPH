@@ -13,4 +13,4 @@ Ice breaking by a high-speed water jet impact
 <a href="https://github.com/SPH-PD-Initializer/PD-SPHinXsys/tree/master/tests/3d_examples/extra_3d_PD/ice-jet/PD_waterColumn_rotation_BaoyuNi_plastic_RC.cpp">
 <img src="https://github.com/SPH-PD-Initializer/PD-SPHinXsys/blob/master/IceBreaking.gif" height="192px"></a>
 
-If you have any further question, you are also welcomed to contact haotian_shi@sjtu.edu.cn
+If you have any further questions, you are also welcome to contact haotian_shi@sjtu.edu.cn
