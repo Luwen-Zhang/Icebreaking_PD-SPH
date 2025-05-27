@@ -109,10 +109,7 @@ namespace SPH
 			BaseIntegration1stHalfWithWall<MultiPhaseIntegration1stHalfRiemann>;
 		using ExtendMultiPhaseIntegration1stHalfRiemannWithWall =
 			BaseExtendIntegration1stHalfWithWall<MultiPhaseIntegration1stHalfRiemann>;
-		// added by Haotian_Shi from SJTU
-		using CompressibleMultiPhaseIntegration1stHalfRiemannWithWall =
-			BaseIntegration1stHalfWithWall<CompressibleMultiPhaseIntegration1stHalfRiemann>;
-		// end added by Haotian_Shi from SJTU
+		
 
 		/**
 		 * @class BaseMultiPhaseIntegration2ndHalf
@@ -136,10 +133,7 @@ namespace SPH
 		using MultiPhaseIntegration2ndHalfRiemann = BaseMultiPhaseIntegration2ndHalf<Integration2ndHalfRiemann>;
 		using MultiPhaseIntegration2ndHalfWithWall = BaseMultiPhaseIntegration2ndHalf<MultiPhaseIntegration2ndHalf>;
 		using MultiPhaseIntegration2ndHalfRiemannWithWall = BaseIntegration2ndHalfWithWall<MultiPhaseIntegration2ndHalfRiemann>;
-		// added by Haotian_Shi from SJTU
-		using CompressibleMultiPhaseIntegration2ndHalfRiemannWithWall =
-			BaseIntegration2ndHalfWithWall<CompressibleMultiPhaseIntegration2ndHalfRiemann>;
-		// end added by Haotian_Shi from SJTU
+		
 
 		/**
 		 * @class MultiPhaseColorFunctionGradient
