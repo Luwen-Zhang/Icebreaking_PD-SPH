@@ -28,6 +28,7 @@ BoundingBox system_domain_bounds(Vec2d(-3.0 * resolution_ref, -3.0 * resolution_
 Real rho0_s = 1.0e3;		 // reference density
 Real Youngs_modulus = 2.0e6; // reference Youngs modulus
 Real poisson = 0.3975;		 // Poisson ratio
+Real tension_strength = 2e6;
 //----------------------------------------------------------------------
 //	Parameters for initial condition on velocity
 //----------------------------------------------------------------------
@@ -192,7 +193,7 @@ int main(int ac, char *av[])
 	//hourglass displacement mode control by LittleWood method
 	InteractionDynamics<solid_dynamics::LittleWoodHourGlassControl> hourglass_control(beam_body_inner, beam_body.sph_adaptation_->getKernel());
 	//breaking bonds based on the MAX principal stress criteria
-	InteractionDynamics<solid_dynamics::BondBreakByPrinStress> check_bondLive(beam_body_inner);
+	InteractionDynamics<solid_dynamics::BondBreakByPrinStress> check_bondLive(beam_body_inner, tension_strength);
 	/** Algorithms for solid-solid contact. */
 	InteractionDynamics<solid_dynamics::ContactDensitySummation> beam_update_contact_density(beam_ball_contact);
 	InteractionDynamics<solid_dynamics::ContactForce> beam_compute_solid_contact_forces(beam_ball_contact);
@@ -270,7 +271,7 @@ int main(int ac, char *av[])
 
 				NosbPD_firstStep.parallel_exec(dt);
 
-				check_bondLive.parallel_exec(dt);
+				//check_bondLive.parallel_exec(dt);
 
 				NosbPD_secondStep.parallel_exec(dt);
 
