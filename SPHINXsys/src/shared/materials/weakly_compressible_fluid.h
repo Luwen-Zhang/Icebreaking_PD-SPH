@@ -54,6 +54,7 @@ namespace SPH
 		virtual Real getPressure(Real rho) override;
 		virtual Real DensityFromPressure(Real p) override;
 		virtual Real getSoundSpeed(Real p = 0.0, Real rho = 1.0) override;
+		virtual Real getPressurebyTamann(Real rho, Real rho_e) override { return 0.0;};
 		virtual WeaklyCompressibleFluid *ThisObjectPtr() override { return this; };
 	};
 
